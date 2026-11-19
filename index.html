@@ -416,12 +416,154 @@ input[type='file'] { padding: 8px; font-size: 14px; }
 .qk-reasons { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 4px 0 12px; }
 .qk-reason { min-height: 56px; padding: 6px 10px; border: 2px solid var(--green-m); border-radius: 12px; background: var(--green-l); font: inherit; font-size: 16px; font-weight: 700; color: var(--df-green); cursor: pointer; touch-action: manipulation; }
 .qk-reason:active { transform: scale(0.97); background: var(--green-m); }
+.tb-home{flex:none;width:40px;height:40px;border:1px solid rgba(255,255,255,.25);border-radius:11px;background:rgba(255,255,255,.12);color:#fff;font-size:19px;display:grid;place-items:center;text-decoration:none;transition:background .15s,transform .1s}.tb-home:active{background:rgba(255,255,255,.3);transform:scale(.94)}@media(max-width:380px){.topbar .tb-logo{display:none}}
+.login-home{position:absolute;left:12px;top:calc(12px + env(safe-area-inset-top,0px));z-index:2;display:flex;align-items:center;gap:6px;height:40px;padding:0 14px 0 10px;border-radius:99px;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.3);color:#fff;font:700 15px Sarabun,sans-serif;text-decoration:none}.login-home:active{background:rgba(255,255,255,.3)}
 </style>
+<style>
+/* ---------- ใบพิมพ์ (PrintKit) ---------- */
+#pk-ov { position: fixed; inset: 0; z-index: 9999; background: #dfe6e2; display: flex; flex-direction: column; }
+.pk-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 10px 12px; background: #14432b; color: #fff; padding-top: max(10px, env(safe-area-inset-top)); }
+.pk-bar b { font-size: 16px; flex: 1 1 auto; }
+#pk-ov .pk-bar select { font: 600 15px Sarabun, sans-serif; padding: 8px 10px; border-radius: 10px; border: 0; max-width: 100%; min-height: 0; color: #1b2b22; -webkit-text-fill-color: #1b2b22; background: #fff; flex: 1 1 180px; }
+#pk-ov .pk-bar button { min-height: 0; }
+.pk-bar button { font: 700 15px Sarabun, sans-serif; border: 0; border-radius: 10px; padding: 9px 16px; cursor: pointer; }
+.pk-go { background: #f5c542; color: #3b2c00; }
+.pk-x { background: rgba(255,255,255,.15); color: #fff; }
+.pk-scroll { flex: 1; overflow: auto; padding: 14px 12px 30px; -webkit-overflow-scrolling: touch; }
+.pk-sheet { background: #fff; width: 210mm; min-height: 297mm; margin: 0 auto; padding: 12mm; box-shadow: 0 4px 22px rgba(0,0,0,.18); }
+.pk-msg { text-align: center; color: #4b5b52; font: 600 13px Sarabun, sans-serif; margin: 0 0 10px; }
+#pk-print { display: none; }
+.pk-doc { font-family: Sarabun, 'TH Sarabun New', sans-serif; color: #000; font-size: 12.5px; line-height: 1.35; }
+.pk-doc .pk-head { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #000; padding-bottom: 6px; margin-bottom: 8px; }
+.pk-doc h1 { font-size: 20px; margin: 0; font-weight: 800; }
+.pk-doc .pk-sub { font-size: 12px; color: #333; }
+.pk-doc .pk-docno { text-align: right; font-size: 12px; }
+.pk-doc .pk-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 18px; margin-bottom: 8px; }
+.pk-doc .pk-meta div { display: flex; gap: 6px; }
+.pk-doc .pk-meta span { color: #444; min-width: 92px; }
+.pk-doc table { width: 100%; border-collapse: collapse; }
+.pk-doc th, .pk-doc td { border: 1px solid #000; padding: 3px 5px; vertical-align: top; }
+.pk-doc th { background: #eee; font-weight: 700; text-align: center; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.pk-doc td.n, .pk-doc th.n { text-align: right; white-space: nowrap; }
+.pk-doc td.c { text-align: center; white-space: nowrap; }
+.pk-doc td.code { white-space: nowrap; }
+.pk-doc td.blank { min-width: 60px; }
+.pk-doc tr.hl td { background: #f2f2f2; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.pk-doc tfoot td { font-weight: 800; background: #f7f7f7; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.pk-doc thead { display: table-header-group; }
+.pk-doc tr { break-inside: avoid; page-break-inside: avoid; }
+.pk-doc .pk-sum { margin: 8px 0 0; font-size: 12.5px; }
+.pk-doc .pk-note { margin-top: 8px; border: 1px solid #000; padding: 4px 6px; min-height: 42px; }
+.pk-doc .pk-sign { display: grid; gap: 14px; margin-top: 26px; break-inside: avoid; page-break-inside: avoid; }
+.pk-doc .pk-sign div { text-align: center; font-size: 12.5px; }
+.pk-doc .pk-sign .ln { border-bottom: 1px dotted #000; height: 26px; margin: 0 6px 4px; }
+.pk-doc .pk-foot { margin-top: 14px; font-size: 10.5px; color: #555; display: flex; justify-content: space-between; }
+.pk-doc .pk-empty { text-align: center; padding: 18px; color: #555; }
+/* ธีมเขียว */
+.pk-doc { --pg: #145f2f; --pg2: #1a7a3c; --pgl: #e8f5ee; --pgm: #b8dfc8; }
+.pk-doc .pk-head { border-bottom: 3px solid var(--pg2); }
+.pk-doc .pk-kick { display: block; letter-spacing: .16em; font-size: 9.5px; color: var(--pg2); font-weight: 700; }
+.pk-doc h1 { color: var(--pg); }
+.pk-doc .pk-sub { color: var(--pg2); font-weight: 600; }
+.pk-doc .pk-meta { gap: 6px; grid-template-columns: repeat(3, 1fr); }
+.pk-doc .pk-meta div { display: block; background: var(--pgl); border-left: 3px solid var(--pg2); border-radius: 4px; padding: 3px 8px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.pk-doc .pk-meta span { display: block; font-size: 10px; min-width: 0; color: #4b6b55; }
+.pk-doc th { background: var(--pg2); color: #fff; border-color: var(--pg2); }
+.pk-doc td { border-color: var(--pgm); }
+.pk-doc tbody tr:nth-child(even) td { background: #f6fbf8; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.pk-doc tr.hl td, .pk-doc tbody tr.hl:nth-child(even) td { background: #fdecea; }
+.pk-doc tfoot td { background: var(--pgl); color: var(--pg); border-color: var(--pgm); }
+.pk-doc .pk-note { border: 1px solid var(--pgm); border-left: 3px solid var(--pg2); border-radius: 4px; }
+.pk-doc .pk-note b { color: var(--pg); }
+.pk-doc .pk-sign b { color: var(--pg); }
+.pk-doc .pk-foot { border-top: 1px solid var(--pgm); padding-top: 4px; }
+@media print {
+  @page { size: A4; margin: 10mm; }
+  html, body { background: #fff !important; }
+  body.pk-printing > *:not(#pk-print) { display: none !important; }
+  body.pk-printing #pk-print { display: block !important; }
+}
+</style>
+<script>
+/* PrintKit — หน้าตัวอย่างใบพิมพ์ A4 + สั่งพิมพ์ (ใช้ร่วมกันทั้ง 3 แอป) */
+window.PrintKit = (function () {
+  var esc = function (v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] }) }
+  var pad = function (n) { return (n < 10 ? '0' : '') + n }
+  function stamp() { var d = new Date(); return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) }
+  // doc = { title, sub, docNoLabel, meta:[[label,value]], cols:[{h, cls, w}], rows:[{cells:[], hl}], foot:[cells]|null, summary:html, noteBox:label|null, sign:[labels], empty }
+  function render(doc) {
+    var h = '<div class="pk-doc">'
+    h += '<div class="pk-head"><div>' + (doc.kicker ? '<small class="pk-kick">' + esc(doc.kicker) + '</small>' : '') + '<h1>' + esc(doc.title) + '</h1>' + (doc.sub ? '<div class="pk-sub">' + esc(doc.sub) + '</div>' : '') + '</div>' +
+      '<div class="pk-docno">' + esc(doc.docNoLabel || 'เลขที่เอกสาร') + ' ......................</div></div>'
+    if (doc.meta && doc.meta.length) h += '<div class="pk-meta" style="grid-template-columns:repeat(' + (doc.meta.length % 4 === 0 ? 4 : 3) + ',1fr)">' + doc.meta.map(function (m) { return '<div><span>' + esc(m[0]) + '</span><b>' + esc(m[1]) + '</b></div>' }).join('') + '</div>'
+    h += '<table><colgroup>' + doc.cols.map(function (c) { return '<col' + (c.w ? ' style="width:' + c.w + '"' : '') + '>' }).join('') + '</colgroup>'
+    h += '<thead><tr>' + doc.cols.map(function (c) { return '<th' + (c.cls === 'n' ? ' class="n"' : '') + '>' + esc(c.h) + '</th>' }).join('') + '</tr></thead><tbody>'
+    if (!doc.rows.length) h += '<tr><td colspan="' + doc.cols.length + '" class="pk-empty">' + esc(doc.empty || 'ไม่มีรายการ') + '</td></tr>'
+    doc.rows.forEach(function (r) {
+      h += '<tr' + (r.hl ? ' class="hl"' : '') + '>' + r.cells.map(function (v, i) { var c = doc.cols[i].cls; return '<td' + (c ? ' class="' + c + '"' : '') + '>' + esc(v) + '</td>' }).join('') + '</tr>'
+    })
+    h += '</tbody>'
+    if (doc.foot && doc.rows.length) h += '<tfoot><tr>' + doc.foot.map(function (v, i) { var c = doc.cols[i] && doc.cols[i].cls; return '<td' + (c ? ' class="' + c + '"' : '') + '>' + esc(v) + '</td>' }).join('') + '</tr></tfoot>'
+    h += '</table>'
+    if (doc.summary) h += '<div class="pk-sum">' + doc.summary + '</div>'
+    if (doc.noteBox) h += '<div class="pk-note"><b>' + esc(doc.noteBox) + '</b></div>'
+    if (doc.sign && doc.sign.length) {
+      h += '<div class="pk-sign" style="grid-template-columns:repeat(' + doc.sign.length + ',1fr)">' + doc.sign.map(function (s) {
+        return '<div><div class="ln"></div>(.......................................)<br><b>' + esc(s) + '</b><br>วันที่ ....../....../......</div>'
+      }).join('') + '</div>'
+    }
+    h += '<div class="pk-foot"><span>พิมพ์เมื่อ ' + esc(stamp()) + '</span><span>' + esc(doc.footRight || '') + '</span></div>'
+    return h + '</div>'
+  }
+  var ov = null
+  function close() {
+    if (ov) { ov.remove(); ov = null }
+    document.removeEventListener('keydown', onKey, true)
+  }
+  function onKey(e) { if (e.key === 'Escape') { e.stopPropagation(); close() } }
+  function fit() {
+    if (!ov) return
+    var sc = ov.querySelector('.pk-scroll'), sh = ov.querySelector('.pk-sheet')
+    var w = sc.clientWidth - 24, full = 794 // 210mm ที่ 96dpi
+    sh.style.zoom = w < full ? String(Math.max(0.3, w / full)) : ''
+  }
+  // cfg = { name, options:[[value,label]], value, build(value) -> doc }
+  function open(cfg) {
+    close()
+    var cur = cfg.value || (cfg.options && cfg.options[0] ? cfg.options[0][0] : '')
+    ov = document.createElement('div')
+    ov.id = 'pk-ov'
+    ov.innerHTML = '<div class="pk-bar"><b>🖨️ ' + esc(cfg.name || 'พิมพ์') + '</b>' +
+      (cfg.options && cfg.options.length > 1 ? '<select class="pk-opt">' + cfg.options.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (o[0] === cur ? ' selected' : '') + '>' + esc(o[1]) + '</option>' }).join('') + '</select>' : '') +
+      '<button type="button" class="pk-go">🖨️ สั่งพิมพ์</button><button type="button" class="pk-x">ปิด</button></div>' +
+      '<div class="pk-scroll"><p class="pk-msg">ตัวอย่างใบพิมพ์ (A4) — ตรวจแล้วกด "สั่งพิมพ์" · บนมือถือเลือกเครื่องพิมพ์ หรือบันทึกเป็น PDF ได้</p><div class="pk-sheet"></div></div>'
+    document.body.appendChild(ov)
+    var draw = function () { ov.querySelector('.pk-sheet').innerHTML = render(cfg.build(cur)); fit() }
+    var sel = ov.querySelector('.pk-opt')
+    if (sel) sel.addEventListener('change', function () { cur = sel.value; draw() })
+    ov.querySelector('.pk-x').addEventListener('click', close)
+    ov.querySelector('.pk-go').addEventListener('click', function () { print(render(cfg.build(cur))) })
+    document.addEventListener('keydown', onKey, true)
+    window.addEventListener('resize', fit)
+    draw()
+  }
+  function print(html) {
+    var box = document.getElementById('pk-print')
+    if (!box) { box = document.createElement('div'); box.id = 'pk-print'; document.body.appendChild(box) }
+    box.innerHTML = html
+    document.body.classList.add('pk-printing')
+    var done = function () { document.body.classList.remove('pk-printing'); window.removeEventListener('afterprint', done) }
+    window.addEventListener('afterprint', done)
+    try { window.print() } catch (e) { done() }
+  }
+  return { open: open, close: close, render: render, print: print }
+})()
+</script>
 </head>
 <body data-mode="login">
 <script>
-/* ตั้งค่า — วาง URL ของ Apps Script (ลงท้าย /exec) ที่ APPS_SCRIPT_URL หรือจะไปตั้งในหน้า ⚙ ตั้งค่าของเว็บก็ได้
-   BRANCHES: name ต้องตรงกับชื่อสาขาที่ต้องการให้ขึ้นในชีต / pin = รหัสยืนยัน 4 หลัก */
+/* ตั้งค่า — BRANCHES: name = ชื่อสาขา / pin = รหัสยืนยัน 4 หลัก
+   แอปนี้ไม่ซิงก์กับ Google Sheet แล้ว ข้อมูลเก็บในเครื่อง และส่งออกเป็นไฟล์ Excel */
 window.APP_CONFIG = {
   "MODE": "return",
   "TITLE": "ตีคืนสินค้า",
@@ -440,7 +582,6 @@ window.APP_CONFIG = {
     "คุณภาพไม่ได้มาตรฐาน",
     "อื่น ๆ"
   ],
-  "APPS_SCRIPT_URL": "",
   "BRANCHES": [
     {
       "id": "onnut",
@@ -460,12 +601,16 @@ window.APP_CONFIG = {
   ]
 }
 </script>
+<script>
+/* ฐานสินค้าของร้าน (จากไฟล์ Excel) — รหัส: [ชื่อสินค้า, หน่วยนับหน้าร้าน] */
+window.PRODUCT_DB = {"FG01002":["เบบี้คอส Baby Cos","PACK 300g"],"FG01003":["โรเมนคอส Romaine Cos","PACK 500g"],"FG01004":["กรีนโอ๊ค Green Oak","PACK 300g"],"FG01005":["เรดโอ๊ค Red Oak","PACK 300g"],"FG01006":["ฟินเลย์ ไอซเบิร์ก Frillice Iceberg","PACK 300g"],"FG01007":["เรด คอรอล Red Coral","PACK 300g"],"FG01008":["บัตเตอร์เฮด Butterhead","PACK 300g"],"FG01009":["ผักกาดแก้ว Iceberg","PACK 300g"],"FG01010":["ผักขม ปวยเหล็ง Chinese Spinach","PACK 250g"],"FG01011":["เบบี้สปีแนช Baby Spinach","PACK 100g"],"FG01014":["ร็อกเก็ตป่าตัดราก Wild Rocket","PACK 100g"],"FG01016":["วอเตอร์เครสนอก French Watercress","PACK 100g"],"FG01017":["คะน้าฝรั่งใบหยิก Curly Kale","PACK 100g"],"FG01018":["สวิสชาร์ดเบบี้ Baby Swiss Chard","PACK 100g"],"FG01019":["คะน้าฮ่องกง Chinese Kale","PACK 250g"],"FG01020":["กวางตุ้งฮ่องเต้ Shanghai Bok Choy","PACK 250g"],"FG01022":["ใบงาเกาหลี Kkaennip leaf","PACK 10pc"],"FG01032":["เบบี้คะน้าฝรั่งใบหยิก Baby Curly Kale","PACK 50g"],"FG01033":["คอสไม่ตัดราก Cos salad with root","PACK 250g"],"FG01035":["เดลิชสลัดมิกซ์ Salad Mixed Delish Foods","PACK 100g"],"FG01037":["ผักสลัดรวมตัดแต่ง Classic Salad Mixed","PACK 150g"],"FG01094":["ใบเบบี้คอส Baby Cos Leaf","PACK 100g"],"FG02001":["กะหล่ำปลี Cabbage","PACK 1kg"],"FG02002":["กะหล่ำม่วง Red Cabbage","PACK 800g"],"FG02003":["ดอกกะหล่ำ Cauliflower","PACK 400g"],"FG02004":["บรอกโคลี่ Broccoli","PACK 400g"],"FG02005":["บรอกโคลินี่ Broccolini","PACK 300g"],"FG02006":["กะหล่ำดาว Brussel Sprout","PACK 250g"],"FG03002":["หน่อไม้ฝรั่ง บี Asparagus B","PACK 250g"],"FG03006":["เซเลอรี่ Celery","PACK 1kg"],"FG03007":["เฟนเนลหัว Bulb Fennel","PACK 200g"],"FG04001":["พาสเลย์ใบหยิก Curly Parsley","PACK 30g"],"FG04002":["อิตาเลี่ยนพาสเลย์ Italian Parsley","PACK 30g"],"FG04003":["โรสแมรี่ Rosemary","PACK 30g"],"FG04004":["ผักชีลาว Dill","PACK 100g"],"FG04006":["ไทม์ Thyme","PACK 30g"],"FG04007":["โหระพาฝรั่ง Sweet Basil","PACK 100g"],"FG04008":["โหระพาไทย Thai Basil","PACK 100g"],"FG04009":["สะระแหน่ Mint","PACK 100g"],"FG04010":["ผักชีไทย Coriander","PACK 50g"],"FG04011":["ผักชีฝรั่ง(ใบเลื่อย) Sawtooth Coriander","PACK 50g"],"FG04012":["ทาร์รากอน Tarragon","PACK 30g"],"FG04014":["ต้นหอม Spring Onion","PACK 50g"],"FG05001":["เห็ดออรินจิ Erinji Mushroom","PACK 200g"],"FG05002":["เห็ดชิเมจิขาว-Shimeji White 125g","PACK"],"FG05003":["เห็ดชิเมจิน้ำตาล Shimeji Brown 125g","PACK"],"FG05004":["เห็ดหอม Shiitake Mushroom","PACK 200g"],"FG05007":["เห็ดเข็มทอง Enoki Mushroom 100g","PACK"],"FG05008":["เห็ดแชมปิญอง Champignon Mushroom","PACK 250g"],"FG05010":["เห็ดสวิส บราวน์ Swiss Brown Mushroom","PACK 200g"],"FG05012":["เห็ดหอมแห้ง Dried Shiitake","PACK 80g"],"FG05016":["เห็ดไมตาเกะ Maitake (Ready To Cook)","PACK"],"FG06001":["แรดิช Red Radish","PACK 200g"],"FG06002":["หัวไชเท้า Oriental Radish","PACK 800g"],"FG06003":["บีทรูท Beetroot","PACK 500g"],"FG06004":["แครอท Carrot","PACK 500g"],"FG06005":["เบบี้แครอทสีส้ม Orange Baby Carrot","PACK 250g"],"FG06008":["มันฝรั่งเบอร์โอ Potato Size O","PACK 500g"],"FG06009":["มันซุป Cocktail Potato","PACK 500g"],"FG06010":["มันฝรั่งรัสเซท Potato Russet","PACK 1kg"],"FG06012":["มันหวานญี่ปุ่น Japanese Sweet Potato","PACK 500g"],"FG06022":["มันหวานญี่ปุ่น พันธ์แท้เบนิฮารุกะ Sweet Potato Beni Haruka","PACK 1kg"],"FG06037":["(AUS) แครอท 4 สี Heirloom Baby Carrot","pack 250g"],"FG06099":["(AUS) Carrot แครอทออสเตเลีย","PACK 500g"],"FG06102":["(AUS) Sweet Potato Gold","PACK 500g"],"FG06103":["(AUS) Sweet Potato Purple","PACK 500g"],"FG07001":["ฟักทองไทย Thai Pumpkin","PACK 1kg"],"FG07002":["ฟักทองญี่ปุ่น Japanese Pumpkin","PACK 1kg"],"FG07003":["ซูกินี Zucchini","PACK 500g"],"FG07004":["แตงกวาญี่ปุ่น Japanese Cucumber","PACK 500g"],"FG07006":["ฟักทองมินิบอล Mini Ball Pumpkin","PACK 1kg"],"FG07007":["บัตเตอร์นัทสควอช Butternut Squash","PACK 1kg"],"FG07040":["แตงกวามินิคิวค์ คริสปี้ Mini Cuke Crispy","Pack 250g"],"FG08002":["หอมใหญ่เบอร์โอ Onion size O","PACK 500g"],"FG08003":["หอมแขก Red Onion","PACK 300g"],"FG08004":["ต้นกระเทียม Leek","PACK 300g"],"FG08005":["ต้นหอมญี่ปุ่น Japanese Bunching Onion","PACK 300g"],"FG08006":["ถั่วลันเตาหวาน Sugar Snap Pea","PACK 250g"],"FG08007":["ข้าวโพดหวาน Sweet Corn","PACK 400g"],"FG08008":["ข้าวโพดฝักอ่อน Baby Corn","PACK 200g"],"FG08009":["ข้าวโพดเทียน Waxy Corn","PACK 1kg"],"FG08012":["ถั่วแขก French Bean","PACK 200g"],"FG08015":["กระเทียมจีนทั้งลูก Whole Garlic","PACK 250g"],"FG08016":["กระเทียมจีนแกะ Peeled Garlic","PACK 100g"],"FG08017":["หอมใหญ่ปอกเปลือก Onion Peeled","PACK 200g"],"FG08018":["หอมแขกปอกเปลือก Red Onion Peeled","PACK 200g"],"FG08044":["ข้าวโพดทับทิมสยาม Siam Ruby Corn","PACK 1pc"],"FG08045":["ข้าวโพดเพียวไวท์ Purewhite Hokkaido","PCE"],"FG08056":["ข้าวโพดหวานพรีมาโกลด์ Premagold Sweet Corn","pce"],"FG09001":["พริกหวานเขียว Green Bell Pepper","PACK 200g"],"FG09002":["พริกหวานแดง Red Bell Pepper","PACK 200g"],"FG09003":["พริกหวานเหลือง Yellow Bell Pepper","PACK 200g"],"FG09004":["มะเขือม่วง Pear Eggplant","PACK 500g"],"FG09005":["มะเขือม่วงยาวก้านดำ Long Eggplant","PACK 500g"],"FG09006":["เลมอน Lemon","PACK 600g"],"FG09010":["มะเขือเทศท้อ Tomato Plum","PACK 400g"],"FG09011":["มะเขือเทศเนื้อ Tomato Beef","PACK 500g"],"FG09012":["มะเขือเทศเชอร์รี่ Cherry Tomato","PACK 200g"],"FG09014":["มะเขือเชอรี่พวง Tomato Cherry Vine","PACK 200g"],"FG09018":["พริกชิชิโต Shishito Pepper","Pack 100g"],"FG09020":["พริกแม็กซิกัน Jalapeno Pepper","PACK 100g"],"FG09022":["มะเขือเชอรี่กลมสีแดง Red Berry Tomato","PACK 200g"],"FG09023":["มะเขือเชอรี่กลมสีเหลือง Yellow Berry Tomato","PACK 200g"],"FG09025":["มะเขือเชอรี่คละสี Fancy Tomato","PACK 200g"],"FG09027":["มะเขือเชอรี่สีเหลือง Creamy","Pack 250g"],"FG09028":["มะเขือเชอรี่สีน้ำตาล Smoky","Pack 250g"],"FG09032":["มะเขือเชอรี่สีส้ม Sandy","Pack 250g"],"FG09034":["มะเขือเชอรี่สีเขียว Greeny","Pack 250g"],"FG09058":["มะเขือเทศราชินีคละสี","PACK 200g"],"FG09068":["มะเขือเทศฟักทอง Ribbed Tomato","Pack 250g"],"FG09074":["พริกหวาน 3 สี","PACK"],"FG09075":["พริกหวานออร่า Aura Sweet Pepper","Pack 200g"],"FG10002":["กีวีเขียว Green Kiwi","PACK 4pc"],"FG10003":["เกรฟฟรุต Grape Fruit","pack 1kg"],"FG10004":["แก้วมังกร Dragon Fruit","PACK 500g"],"FG10005":["แคนตาลูป Cantaloupe","PCE"],"FG10006":["แตงโม Watermelon","PCE"],"FG10007":["ทับทิมอินเดีย Pomegranate 12pce/BOX","PCE"],"FG10008":["บลูเบอรี่สด Blueberry (125 g/pack)","PACK"],"FG10010":["มะพร้าวอ่อน Coconut Young","PCE"],"FG10011":["มะม่วงสุก Mango Ripe","PACK 1kg"],"FG10014":["มะละกอสุกฮอลแลนด์ Papaya Ripe Holland","PACK 1kg"],"FG10016":["เมลอนเนื้อเขียว Melon Green Flesh","PCE"],"FG10017":["เมลอนเนื้อส้ม Melon Orange Flesh","PCE"],"FG10019":["ส้มคั้นน้ำ Orange for Juice","PACK 1kg"],"FG10020":["ส้มซันคิส Orange Sunkist 14 KG","PACK 1kg"],"FG10022":["ส้มแมนดาริน Orange Mandarin 7 KG","PACK 1kg"],"FG10023":["ส้มโอขาวน้ำผึ้ง Pomelo","PCE"],"FG10024":["สับปะรด Pineapple","PCE"],"FG10027":["สาลี่ Chinese Pear","PACK 3pc"],"FG10029":["เสาวรส Passion Fruit","PACK 500g"],"FG10030":["องุ่นเขียวไร้เมล็ด Green Grape Seedless","PACK 500g"],"FG10031":["องุ่นดำไร้เมล็ด Black Grape Seedless","PACK 500g"],"FG10032":["องุ่นแดงไร้เมล็ด Red Grape Seedless","PACK 500g"],"FG10033":["แอปเปิ้ลเขียว Apple Green Granny Smith","PACK 4pc"],"FG10035":["แอปเปิ้ลกาล่า Apple Gala 120pc","PACK 4pc"],"FG10038":["ส้มซันคิสคาราคาร่า Orange Sunkist Cara Cara","PACK 1kg"],"FG10042":["เชอร์รี่นำเข้า Imported Cherry 5 KG","PACK 500g"],"FG10043":["องุ่นดำนิ้วแม่มด Witch Finger Grape","PACK 500g"],"FG10044":["ส้มแมนดาริน Orange Mandarin 9 KG","PACK 1kg"],"FG10045":["ทับทิมอินเดีย Pomegranate 10pce/BOX","PCE"],"FG10047":["กีวีเบอร์รี่ Kiwiberry (125 g/pack)","PACK"],"FG10049":["กีวีสีทอง Golden Kiwi","PACK 4pc"],"FG10051":["ลิ้นจี่ พันธุ์สนมยิ้ม Lychee Fei Zhi Xiao","PACK 1kg"],"FG10052":["แอปเปิ้ลเอ็นวี่ Apple Envy","PACK 2pc"],"FG10053":["แอปเปิ้ลควีน Apple Queen","PACK 4pc"],"FG10057":["แตงโมเหลือง Yellow Watermelon","PACK 4kg"],"FG10058":["เมลอนเนื้อขาว Golden Pearl Melon","PCE"],"FG10061":["พุทราช็อกโกแลต Chinese Jujube","PACK 1kg"],"FG10062":["สตอเบอรี่ Strawberry (8x250g)","PACK 250g"],"FG10064":["ทับทิมตูนีเซีย Tunisia Pomegranate","PCE"],"FG10066":["เคปกูสเบอรี่ Cape Gooseberry","PACK 500g"],"FG10067":["อโวคาโดแฮส Avocado Hass (30 pce/box)","PCE"],"FG10068":["แอปเปิ้ลฟูจิ Fuji Apple","PACK 2pc"],"FG10069":["ส้มแมนดารินจิ๋ว Baby Mandarin Orange","PACK 1kg"],"FG10074":["กล้วยหอมห่าม Banana Half-Ripe","PCE"],"FG10080":["แอปเปิ้ลเชอรีส Apple Cherish","PACK 4pc"],"FG10081":["มะเดื่อฝรั่ง Fig","PACK 200g"],"FG10087":["ฝรั่ง Green Guava","PACK 1kg"],"FG10090":["เงาะ Rambutan","PACK 1kg"],"FG10092":["กล้วยน้ำว้า Banana","PCE"],"FG10093":["ลำไย Longan","PACK 1kg"],"FG10094":["มังคุด Mangosteen","PACK 1kg"],"FG10095":["มะยงชิด Sweet Yellow Marian Plum","PACK 1kg"],"FG10098":["แก้วมังกรแดง Red Drogon Fruit","PACK 500g"],"FG10100":["ฝรั่งไส้แดง Red Guava","PACK 1kg"],"FG10101":["มะพร้าวเผา Roasted Coconut","PCE"],"FG10102":["ฝรั่งกิมจู Guava Gimju","PACK 1kg"],"FG10105":["ส้มโอทับทิมสยาม Siam Ruby Pomelo","PCE"],"FG10106":["สละ Salacca","PACK 1kg"],"FG10107":["พลับนิวซีแลนด์ New Zealand Persimmon","pce"],"FG10109":["แอปเปิ้ลกิลแม็ค Apple Gilmac NZ","PACK 2pc"],"FG10112":["พีชขาว White Peach USA/AUS","PACK 600g"],"FG10113":["องุ่นไชน์มัสแคท Shine Muscat Grape","PACK 500g"],"FG10115":["แอปเปิ้ลออแกนิก Apple Candine FR","PACK 4pc"],"FG10159":["แพรแดง Red Pear SA","PACK 2pc"],"FG10163":["สับปะรดภูแล Pineapple Phulae","PCE"],"FG10169":["สตอเบอรี่ Strawberry USA (12x250g)","PACK 250g"],"FG10171":["ลูกฟิกส์อบแห้ง","PACK 500g"],"FG10172":["แอปริคอตอบแห้ง","PACK 500g"],"FG10173":["เม็ดมะม่วงหิมพานต์อบแห้ง","PACK 500g"],"FG10178":["สตอเบอรี่ Strawberry AUS (15x250g)","PACK 250g"],"FG10181":["(AUS) Blood Orange","PACK 1kg"],"FG10183":["ราสเบอรี่ Raspberry (125 g/pack)","pack"],"FG10187":["ชมพู่ทับทิมจันทร์ Tubtim Chandra Rose Apples","PACK 1kg"],"FG10228":["แตงโมส้มควีนเลดี้ Orange Queen Lady Watermelon","PACK 4kg"],"FG10233":["แตงโมเล็ก Small Watermelon","PCE"],"FG10234":["แคนตาลูปไข่มุก Pearl Cantaloupe","PCE"],"FG10235":["กีวีแดง Ruby Red Kiwi","PACK 2pc"],"FG10241":["มะม่วงสุก Mango Ripe (4-5 PCE/KG)","pack 1kg"],"FG10250":["น้อยหน่าสีม่วง Purple Custard Apple","PACK 1kg"],"FG10252":["เมลอนสีทอง Golden Melon","PCE"],"FG10253":["แก้วมังกรเหลือง Yellow Dragon Fruit","PACK 500g"],"FG10255":["แอปเปิ้ลโซลูน่า Soluna Apple","pack 2pc"],"FG10257":["ส้มเอฮิเมะ Ehime Orange","PCE"],"FG10258":["แบล็กเบอร์รี่ Blackberry (100g/pack)","Pack 100g"],"FG11001":["ผักโขมไทย Thai Spinach","PACK 250g"],"FG11003":["ผักบุ้งจีน Chinese Morning Glory","PACK 300g"],"FG11004":["ผักบุ้งไทย Thai Morning Glory","PACK 300g"],"FG11006":["คะน้าไทย Thai Kale","PACK 300g"],"FG11007":["ขึ้นฉ่ายไทย Thai Celery","PACK 50g"],"FG11009":["ตำลึง Coccinia Grandis","PACK 300g"],"FG11010":["ยอดฟักแม้ว Chayote Shoots","PACK 300g"],"FG11011":["ชะอม Acacia Pennata","PACK 250g"],"FG11016":["ผักกาดขาว Chinese Cabbage","PACK 1kg"],"FG11018":["ผักกาดหอม Lettuce","PACK 300g"],"FG11020":["ยอดคะน้า Baby Kale Thai","PACK 250g"],"FG11022":["ผักกวางตุ้ง Kwang Tung","PACK 250g"],"FG12001":["ใบกะเพรา Holy Basil","PACK 100g"],"FG12003":["กระชายหัว Finger Root","PACK 100g"],"FG12005":["กระเทียมไทยกลีบ Thai Garlic","PACK 100g"],"FG12006":["กระเทียมไทยทั้งลูก Thai Whole Garlic","PACK 250g"],"FG12007":["ขิงอ่อน Ginger Young","PACK 200g"],"FG12009":["ขิงแก่ Ginger","PACK 200g"],"FG12010":["ข่าแก่ Mature Galangal","PACK 200g"],"FG12012":["ตะไคร้ Lemon Grass","PACK 100g"],"FG12013":["ใบแมงลัก Thai Lemon Basil","PACK 100g"],"FG12014":["ใบมะกรูด Kaffir Lime Leaves","PACK 20g"],"FG12015":["มะขามเปียก Tamarind Paste","PACK 200g"],"FG12016":["รากผักชี Coriander Root","PACK 50g"],"FG12017":["หอมแดงไทย Shallot","PACK 250g"],"FG12019":["ขมิ้นเหลือง Turmeric","PACK 200g"],"FG12021":["หอมแดงไทยปอกเปลือก Shallot Peeled","PACK 100g"],"FG12023":["ข่าอ่อน Young galangal","PACK 200g"],"FG14001":["แตงกวา Small Cucumber","PACK 300g"],"FG14002":["แตงร้าน Big Cucumber","PACK 500g"],"FG14003":["มะระจีน Chinese Bitter Gourd","PACK 400g"],"FG14004":["ฟัก Gourd","PACK 900g"],"FG14007":["บวบอ่อน Young Gourd","PACK 500g"],"FG14009":["บวบเหลี่ยม Angled Gourd","PACK 500g"],"FG15001":["ถั่วฝักยาว Yard Long Bean","PACK 200g"],"FG16001":["มะนาวแป้นเขียว(ขนาด500) Lime Size500","PACK 4pc"],"FG16002":["มะนาวไร้เมล็ด Seedless Lime","PACK 4pc"],"FG16004":["มะละกอดิบ Papaya Green","PACK 800g"],"FG16005":["กระเจี๊ยบเขียว Okra","PACK 150g"],"FG16006":["มะเขือยาวเขียว Thai Long Green Aubergine","PACK 500g"],"FG16007":["มะเขือเปราะ Eggplant White Thai","PACK 200g"],"FG16008":["มะเขือพวง Thai Pea Aubergine","PACK 200g"],"FG16009":["มะเขือสีดา Seeda Tomato","PACK 250g"],"FG16010":["มะเขือไข่เต่าม่วง Thai Pea Aubergine (Purple)","PACK 250g"],"FG16011":["มะเขือไข่เต่าขาว Thai Pea Aubergine (white)","PACK 250g"],"FG16017":["พริกขี้หนูเขียวเด็ดก้าน Green Bird's Eye Chilli","PACK 50g"],"FG16018":["พริกขี้หนูแดงเด็ดก้าน Red Bird's Eye Chilli","PACK 50g"],"FG16019":["พริกขี้หนูสวนเล็ก Small Chilli","PACK 50g"],"FG16020":["พริกชี้ฟ้าแดง Chilli Red","PACK 100g"],"FG16021":["พริกชี้ฟ้าแดงแห้ง Dried Chili","PACK 80g"],"FG16022":["พริกขี้หนูแห้ง Dried Chilli","PACK 80g"],"FG16023":["พริกชี้ฟ้า เหลือง Chilli Yellow","PACK 100g"],"FG16024":["พริกชี้ฟ้า เขียว Chilli Green","PACK 100g"],"FG16026":["พริกไทยอ่อน Green Peppercorn","PACK 50g"],"FG16027":["พริกหยวก Chilli Green (Prik Yuak)","PACK 200g"],"FG16081":["พริกสกรู Screw Chili","Pack 200g"],"FG17008":["ดอกไม้ทานได้คละ Mixed Edible Flowers","PACK"],"FG18002":["เผือก Taro","PACK 1kg"],"FG18003":["มันเทศม่วง Purple Sweet Potato","PACK 500g"],"FG18004":["มันเทศเนื้อส้ม Orange Flesh Sweet Potato","PACK 500g"],"FG18006":["ยอดมะพร้าว Coconut Stalk","PACK 500g"],"FG19007":["เบบี้ซอเรลแดง Baby Red Veined Sorrel","PACK"],"FG20013":["กัวคาโมเล Guacamole Set","SET"],"FG20055":["ชุดผักแกงกะหรี่","set"],"FG22001":["ออร์แกนิค กรีนโอ๊ค Green Oak Organic","PACK 250g"],"FG22002":["ออร์แกนิค เรดโอ๊ค Red Oak Organic","PACK 250g"],"FG22003":["ออร์แกนิค ฟินเลย์ไอเบิร์ก Frillice Icebege Organic","PACK 250g"],"FG22004":["ออร์แกนิค เรด คอรอล Red Coral Organic","PACK 250g"],"FG22005":["ออร์แกนิค บัตเตอร์เฮด Butterhead Organic","PACK 250g"],"FG22006":["ออร์แกนิค กรีนคอส Green Cos Organic","PACK 250g"],"FG22007":["ออร์แกนิค เรดปัตตาเวีย Red Batavia Organic","PACK 200g"],"FG22011":["ออร์แกนิค เบบี้คอส Baby Cos Organic","PACK 200g"],"FG22012":["ออร์แกนิค คะน้าใบหยิก Curly Kale Organic(Kg)","PACK 200g"],"FG22013":["ออร์แกนิค ร็อกเก็ตป่า Wild Rocket Organic","PACK 150g"],"FG22018":["ออร์แกนิค ผักกวางตุ้ง Kwang Tung Organic","PACK 200g"],"FG22019":["ออร์แกนิค คะน้าไทย Kale Thai Organic","PACK 200g"],"FG22020":["ออร์แกนิค กวางตุ้งฮ่องเต้ Organic Taiwanese Bok Choy","PACK 200g"],"FG22021":["ออร์แกนิค ผักบุ้งจีน Organic Chinese Morning Glory","PACK 200g"],"FG22024":["ออร์แกนิค กะหล่ำปลี Cabbage Organic(Kg)","PACK 500g"],"FG22031":["ออร์แกนิค มะเขือเทศเชอรี่ Cherry Tomato Organic","PACK 250g"],"FG22033":["ออร์แกนิค ผักกาดขาวปลี Organic Michilli Cabbage","PACK 500g"],"FG22034":["ออร์แกนิค ข้าวโพดหวาน Organic Sweet Corn","PACK 500g"],"FG22035":["ออร์แกนิค เบบี้แครอท Organic Baby Carrot","PACK 250g"],"FG22039":["ออร์แกนิค สลัดแก้ว Organic Iceberg (Kg)","PACK 250g"],"FG22040":["ออร์แกนิค ปวยเล้ง Organic Spinach(Kg.)","PACK 200g"],"FG22042":["ออร์แกนิค วอเตอร์เครส Organic Watercress ( Kg)","PACK 100g"],"FG22051":["ออร์แกนิค เบบี้ผักฉ่อย Organic Baby Pok Choy (Kg)","PACK 200g"],"FG22052":["ออร์แกนิค จิงจูฉ่าย Organic White Mugwort (Kg)","PACK 200g"],"FG22053":["ออร์แกนิค แตงกวา Organic Cucumber (Kg)","PACK 250g"],"FG22054":["ออร์แกนิค แตงร้าน Organic Long Cucumber","PACK 500g"],"FG22055":["ออร์แกนิค กระเจี๊ยบเขียว Organic Okra ( Kg)","PACK 200g"],"FG22056":["ออร์แกนิค ถั่วฝักยาว Organic Yard Long Bean (kg)","PACK 250g"],"FG22058":["ออร์แกนิค บวบเหลี่ยม Organic Lium Zuchini (Kg)","PACK 500g"],"FG22059":["ออร์แกนิค มะเขือเทศเชอร์รี่สีเหลือง Organic Yellow Cherry Tomato","PACK 250g"],"FG22060":["ออร์แกนิค มะเขือเทศท้อ Organic Plum Tomato","PACK 500g"],"FG22062":["ออร์แกนิค มะเขือเปราะขาว Organic Cript eggplant(Kg)","PACK 250g"],"FG22063":["ออร์แกนิค มะเขือยาวม่วง Organic Purple Eggplant ( Kg)","PACK 500g"],"FG22064":["ออร์แกนิค มะเขือยาวเขียว Organic Green Eggplant (Kg)","PACK 500g"],"FG22066":["ออร์แกนิค มะระจีน Organic Bitter Ground (Kg.)","PACK 1kg"],"FG22075":["ออร์แกนิค มะเขือเทศเชอร์รี่สีแดง Organic Red Cherry Tomato","PACK 250g"],"FG22078":["ข้าวไรซ์เบอรี่ออร์แกนิค","PACK 1kg"],"FG22079":["ข้าวหอมมะลิแดงออร์แกนิค","PACK 1kg"],"FG22080":["ข้าวกล้องปิ่นเกษตรออร์แกนิค","PACK 1kg"],"FG22081":["ข้าวไตรทิพย์ออร์แกนิค","PACK 1kg"],"FG22083":["ชุดของขวัญ ข้าวกล้องออร์แกนิค","SET"],"FG22085":["ออร์แกนิค ผักกาดหอมอิตาลี่ Organic Green Lecttuce Itali (Kg)","PACK 200g"],"FG22088":["ออร์แกนิค เบบี้คอสแดง Red Baby Cos Organic","PACK 200g"],"FG22092":["ออร์แกนิค เห็ดนางฟ้าภูฐาน Organic Bhutan Oyster Mushroom 100g.","PACK 100g"],"FG22093":["ออร์แกนิค เห็ดเข็มทอง Organic Enoki Mushroom 200g.","PACK"],"FG22094":["ออร์แกนิค เห็ดโคนญี่ปุ่น Organic Yanagi Mushroom 150g.","PACK"],"FG22095":["ออร์แกนิค เห็ดรวม 4 อย่าง Organic 4 Types Mushroom 200g.","PACK"],"FG22096":["ออร์แกนิค เห็ดหอม Organic Shitake Mushroom 150g.","PACK"],"FG22098":["ออร์แกนิค มิกซ์เบบี้คอส Organic mix Baby Cos","Pack 250g"],"FG22099":["โคโค่แบร์ มะพร้าวออร์แกนิค Cocobear organic coconut","pce"],"FG23001":["เบอร์เกอร์เนื้อจากพืช Plant-Based Burger Patty (113g)","PACK"],"FG23002":["เนื้อบดจากพืช Plant-Based Minced Meat (150g)","PACK"],"FG23003":["เนื้อบดจากพืช Plant-Based Minced Meat (1kg)","PACK"],"FG24001":["Sausage: Cumberland 500 g (6 pce/pack)","PACK"],"FG24002":["Sausage: Chicken & Thyme 500 g (6 pce/pack)","PACK"],"FG24003":["Sausage: Maple & Smoked Bacon 500 g (6 pce/pack)","PACK"],"FG24004":["Sausage: Beef & Onion 500 g (6 pce/pack)","PACK"],"FG24005":["Sausage: Chorizo Fresco 500 g (6 pce/pack)","PACK"],"FG24006":["Sausage: Italian Picante 500 g (6 pce/pack)","PACK"],"FG24007":["US Smoked Bacon (200 g/pack)","PACK"],"FG24008":["Smoked Back Bacon (200 g/pack)","PACK"],"FG24009":["Back Bacon (200 g/pack)","PACK"],"FG24010":["Pancetta (200g/Pack)","PACK"],"FG24011":["Steak n Stout Pie (250 g/pack)","PACK"],"FG24012":["Beef, Red Wine & Mushroom Pie (250 g/pack)","PACK"],"FG24013":["Chicken, Ham Hock & Leek Pie (250 g/pack)","PACK"],"FG24014":["เบอร์เกอร์เนื้อดรายเอจ Dry Aged Angus Beef Burger (4x125g)","PACK"],"FG24015":["เบอร์เกอร์หมูฟรีเรนจ์ Free-Range Pork Burger (4x125g)","PACK"],"FG24016":["Salmon from Norway (130g)","PCE"],"FG24017":["Snow Fish from Chile (200g)","PCE"],"FG24018":["Rib Eye from Australia (125g)","PCE"],"FG24019":["Tenderloin from Australia (125g)","PCE"],"FG24020":["เบอร์เกอร์บัน Burger Bun 100 g (4 pce/pack)","PACK"],"FG24021":["ซาวอยยาร์ด Savoyard (500 g/pce)","PCE"],"FG24022":["มัลติเกรน Multigrain (400 g/pce)","PCE"],"FG24023":["บาแก็ต เทรดดิชั่น Baguette Tradition (350 g/pce)","PCE"],"FG24024":["เชียบัตต้า Ciabatta 140 g (4 pce/pack)","PACK"],"FG24025":["ดาร์กไรย์ Dark Rye (400 g/pce)","PCE"],"FG24026":["ขนมปังเบอเกอร์โฮลวีต Vegan Whole Wheat Bun 30g (1 PCE/PACK)","PCE"],"FG25001":["ไข่ไก่ Free Range Egg (10 pce/pack)","PACK"],"FG25002":["ไข่เป็ดปลอดสาร Free Range Duck Egg เบอร์ 0 (10 PCE/TRAY)","PACK"],"FG25004":["ไข่ไก่สดปลอดสารเคจฟรี ขนาด M Cage Free Egg size M (10 pce/pack)","PACK"],"FG26001":["(SP) Black Truffle Oil 250 ml","BOTTLE"],"FG26002":["(SP) White Truffle Oil 250ml","BOTTLE"],"FG26003":["(SP) Black Truffle Sauce 190 g","JAR"],"FG26004":["(SP) Black Truffle Sauce 90 g","JAR"],"FG26005":["กระเทียมดำ-หัว Black Garlic-Bulb 200g","Pack"],"FG26006":["กระเทียมดำ-โทน Black Garlic-Tone 200g","Pack"],"FG26025":["KEWPIE Sesame Soy Sauce Dressing 50g","ซอง"],"FG26026":["KEWPIE Roasted Sesame Dressing 50g","ซอง"],"FG26027":["KEWPIE Caesar Salad dressing 50 g","ซอง"],"FG26029":["พริกไทยตรังดำ GI ขวดฝาบด 40 กรัม","BOTTLE"],"FG26030":["พริกไทยแดงตรัง ขวดฝาบด 40 กรัม","BOTTLE"],"FG26031":["พริกไทยตรังขาว GI ขวดฝาบด 40 กรัม","BOTTLE"],"FG26032":["พริกไทยตรัง 3สี ขวดฝาบด 40 กรัม","BOTTLE"],"FG26036":["น้ำสลัดน้ำมันมะกอกผสมเห็ดทรัฟเฟิล","ซอง"],"FG26037":["น้ำสลัดน้ำมันมะกอกผสมเครื่องเทศพิซซ่า","ซอง"],"FG26038":["น้ำสลัดน้ำมันมะกอกผสมเบอร์รี่","ซอง"],"FG26039":["น้ำสลัดน้ำมันมะกอกรสซีซาร์และแบล็คทรัฟเฟิล","ซอง"],"FG26040":["น้ำสลัดน้ำมันมะกอกผสมเห็ดทรัฟเฟิล","BOTTLE"],"FG26041":["น้ำสลัดน้ำมันมะกอกผสมเครื่องเทศพิซซ่า","BOTTLE"],"FG26042":["De La Lita น้ำสลัดซีซาร์ ดิ ปาร์ม่า 30g.","ซอง"],"FG26043":["De La Lita น้ำสลัดหอยลายพริกไทยดำ 30g.","ซอง"],"FG26044":["De La Lita น้ำสลัดซีฟู้ดแซ่บ 30g.","ซอง"],"FG30002":["ไอติมคีโต รสชาไทย (chathai) ขนาด ขนาด 90 g.","ea"],"FG30003":["ไอติมคีโต รสช็อคโกแลต - กล้วย (Choco- Banana) ขนาด ขนาด 90 g.","ea"],"FG30004":["ไอติมคีโต รสสตรอว์เบอร์รี(strawberry) ขนาด 90 g.","ea"],"FG30005":["ไอติมคีโต รสบลูเบอร์รี(blueberry) ขนาด 90 g.","ea"],"FG30007":["ไอติมคีโต รสอัลมอลด์ช็อกโก(almondchoco) ขนาด 90 g.","EA"],"FG30008":["ไอติมคีโต รสอัลมอลด์วนิลา (almond Vanilla) ขนาด 90 g.","EA"],"FG30009":["ไอติมคีโต รสมิกซ์เบอร์รี่ (Mixberry) 90 g.","ea"],"FG30010":["ไอติมคีโต รสกาแฟ (Coffee) 90 g.","ea"],"FG30011":["ไอติมคีโต รสชาเขียว (Matcha) 90 g.","ea"],"FG30012":["ไอติมคีโต รสดาร์กชอคโกแลต (Dark Chocolate) 90 g.","EA"],"FG30013":["ไอติมคีโต รสอัลมอลด์สตรอเบอร์รี่ (almond strawberry) 90 g.","EA"],"FG30014":["ไอติมคีโต รสอัลมอลด์บลูเบอร์รี่ (almond Blueberry) 90 g.","EA"],"FG30015":["ไอติมคีโต รสอัลมอลด์มิกซ์เบอร์รี่ (almond Mixberry) 90 g.","EA"],"FG30016":["ไอติมคีโต รส Very Berry ขนาด 90 g.","ea"],"FG30017":["ไอติมคีโต รส Mango Passion Fruit ขนาด 90 g.","ea"],"FG30018":["Darklord","ea"],"FG30019":["Rocher","ea"],"FG30020":["Pita & Pita","ea"],"FG30021":["White Cloud","ea"],"FG30022":["Good old time","EA"],"FG30023":["New York Dream","ea"],"FG30024":["Summer in sicity","EA"],"FG30025":["Banana ola","EA"],"FG30026":["Umami matcha","EA"],"FG30027":["Rise n'shine","EA"],"FG30028":["Cookie'n cream","EA"],"FG30029":["Acai pulp sweetened","EA"],"FG31001":["ขนมอบกรอบจากดอกกะหล่ำรสแบล็คทรัฟเฟิล","PCE"],"FG31002":["ขนมอบกรอบจากดอกกะหล่ำรสพิซซ่า","PCE"],"FG31003":["ขนมอบกรอบจากดอกกะหล่ำรสเดนิชแพสดรี","PCE"],"FG31004":["De La Lita Almond Chips 25g. : Original","PCE"],"FG31005":["De La Lita Almond Chips 25g. : Sea Salt","PCE"],"FG31006":["De La Lita Almond Chips 25g. : Grilled Sweet Corn","PCE"],"FG31007":["De La Lita Whole Wheat 30 g : Original","PCE"],"FG31008":["De La Lita Whole Wheat 30 g : Sour Cream &Onion","PCE"],"FG31009":["De La Lita Whole Wheat 30 g : Larb Zaab","PCE"],"FG31010":["De La Lita Whole Wheat 30 g : Smoky BBQ","PCE"],"FG31011":["De La Lita Party set","PCE"],"FG31012":["ชิปโป้ ขนมข้าวผสมบรอกโคลีแท่งอบกรอบ 22 กรัม รสสาหร่าย","PCE"],"FG31013":["ชิปโป้ ขนมข้าวผสมฟักทองแท่งอบกรอบ 22 กรัม รสออริจินัล","PCE"],"FG31014":["ชิปโป้ ขนมข้าวผสมฟักทองแท่งอบกรอบ 22 กรัม รสทรัฟเฟิลชีส","PCE"],"FG32001":["เฮอริเทจ ถั่วลูกไก่ดิบ 500 กรัม Raw Chickpeas","PCE"],"FG32005":["เฮอริเทจ เม็ดมะม่วงหิมพานต์ดิบเต็มเมล็ด 500 กรัม Raw Cashew","PCE"],"FG32007":["เฮอริเทจ ลูกเกดดำ 500 กรัม Black Raisins","PCE"],"FG32009":["เฮอริเทจ เมล็ดทานตะวันอบกะเทาะเปลือก 500 กรัม Dry Roasted Sunflower Seeds","PCE"],"FG32011":["เฮอริเทจ ลูกเกดเขียว 454 กรัม Green Raisins","PCE"],"FG32012":["เฮอริเทจ แมคคาดาเมีย เบอร์ 2 (เมล็ดเต็มผสมหักท่อน) 500 กรัม Macadamia No#2","PCE"],"FG32015":["เฮอริเทจ วอลนัทอบ 300 กรัม Roasted Walnuts","PCE"],"FG32016":["เฮอริเทจ พิสทาชิโอแบบมีเปลือกอบ 350 กรัม Roasted Pistachios","PCE"],"FG32017":["เฮอริเทจ พีแคนอบ 300 กรัม Roasted Pecans","PCE"],"FG32018":["เฮอริเทจ อัลมอนด์แบบลอกเปลือกชนิดแผ่นบางอบ 300 กรัม Roasted Sliced Almonds","PCE"],"FG32019":["เฮอริเทจ อัลมอนด์อบ 400 กรัม Roasted Almonds","PCE"],"FG32020":["เฮอริเทจ เมล็ดมะม่วงหิมพานต์อบ 400 กรัม Roasted Cashew Nuts","PCE"],"FG32021":["เฮอริเทจ แมคคาดาเมียอบ 350 กรัม Roasted Macadamia Nuts","PCE"],"FG32022":["เฮอริเทจ เมล็ดมะม่วงหิมพานต์ชนิดซีกอบ 450 กรัม Roasted Cashew Nut Halves","PCE"],"PK01022":["ถุง BOPP NAF30 20.4x30.5+5 PU04-Print 4 Color ขนาด 8x12 นิ้ว Delish Foods","ชิ้น"],"PK01023":["ถุง BOPP NAF30 25.0x38.0+5 PU04-Print 4 Color ขนาด 10x15 นิ้ว Delish Foods","ชิ้น"],"PK01024":["ถุง BOPP NAF30 30.10x45.70+5 PU04-Print 4 Color ขนาด 12x18 นิ้ว Delish Foods","ชิ้น"],"PK01025":["ถุง BOPP NAF30 20.4x66.0+5 PU04-Print 4 Color ขนาด 8x26 นิ้ว Delish Foods","ชิ้ิ้น"],"PK06007":["ถุงพลาสติก PETขาวนม หูหิ้ว 3 หู ขนาด 15x22x0.08 พิมพ์ 1 สีดำ","PACK"],"PK06008":["ถุงพลาสติก PETขาวนม หูหิ้ว 2 หู ขนาด 9x18x0.08 พิมพ์ 1 สีดำ","PACK"]}
+</script>
 <div id="app">
   <header class="topbar">
+    <a class="tb-home" href="https://suphatsonw-glitch.github.io/homepage/" aria-label="กลับหน้าโฮม" title="กลับหน้าโฮม">🏠</a>
     <div class="tb-logo" aria-hidden="true">↩️</div>
     <div class="tb-text"><div class="tb-title" id="tb-title"></div><div class="tb-sub" id="tb-sub"></div></div>
     <div class="tb-right" id="tb-right" hidden>
-      <button type="button" class="tb-btn" data-act="setup" aria-label="ตั้งค่า">⚙</button>
       <button type="button" class="tb-btn" data-act="logout" aria-label="ออกจากระบบ">⏻</button>
     </div>
   </header>
@@ -496,27 +641,41 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
   const branchById = (id) => CFG.BRANCHES.find((b) => b.id === id)
 
   /* ---------- localStorage (ห่อ try/catch) ---------- */
-  const K = { settings: 'rc_settings_' + M, session: 'rc_session_' + M, entries: 'rc_entries_' + M, products: 'rc_products', pend: 'rc_prod_pending', psync: 'rc_prod_sync' }
+  const K = { settings: 'rc_settings_' + M, session: 'rc_session_' + M, entries: 'rc_entries_' + M, extra: 'rc_products_extra' }
   function lsGet(k, def) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def } catch (e) { return def } }
   function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)) } catch (e) { /* ไม่เป็นไร */ } }
-  const getSettings = () => Object.assign({ url: CFG.APPS_SCRIPT_URL || '', pass: '', user: '', lastBranch: '' }, lsGet(K.settings, {}))
+  const getSettings = () => Object.assign({ user: '', lastBranch: '' }, lsGet(K.settings, {}))
   const saveSettings = (p) => lsSet(K.settings, Object.assign(getSettings(), p))
 
   /* ---------- State ---------- */
   let SESSION = null
   let view = 'login' // login | main | setup | products
   let entries = lsGet(K.entries, [])
-  let products = lsGet(K.products, {}) // รหัส -> [ชื่อ, packsize] ฐานสินค้า (ใช้ร่วมกันทั้งแอปรับเข้า/ตีคืน บนเครื่องเดียวกัน)
-  let pending = lsGet(K.pend, {}) // สินค้าใหม่ที่เพิ่มหน้างาน รอส่งขึ้นชีต
-  let psync = lsGet(K.psync, 0)
-  const prodCount = () => Object.keys(products).length
-  const saveProducts = () => { lsSet(K.products, products); lsSet(K.pend, pending); lsSet(K.psync, psync) }
+  // ฐานสินค้า = ไฟล์ที่ฝังไว้ (PRODUCT_DB) + สินค้าที่เพิ่ม/แก้ในเครื่องนี้ (extra)
+  const BASE = window.PRODUCT_DB || {}
+  let extra = lsGet(K.extra, null)
+  if (!extra || typeof extra !== 'object') {
+    extra = {}
+    const oldPend = lsGet('rc_prod_pending', {}) || {} // สินค้าที่เคยเพิ่มหน้างานจากเวอร์ชันเก่า
+    Object.keys(oldPend).forEach((c) => { if (!BASE[c] && Array.isArray(oldPend[c])) extra[c] = oldPend[c] })
+    lsSet(K.extra, extra)
+  }
+  let products = {}
+  let codeList = []
+  function rebuildProducts() {
+    products = Object.assign({}, BASE, extra)
+    codeList = Object.keys(products).sort().map((c) => ({ c: c, d: c.replace(/\D/g, ''), z: c.replace(/\D/g, '').replace(/^0+/, '') }))
+  }
+  rebuildProducts()
+  const prodCount = () => codeList.length
+  const saveProducts = () => { lsSet(K.extra, extra); rebuildProducts() }
   let sending = false
   const lg = { branchId: '' }
+  let selDate = todayKey()
 
   function pruneEntries() {
     const cut = todayKey(new Date(Date.now() - 14 * 86400000))
-    entries = entries.filter((e) => !e.sent || e.date >= cut)
+    entries = entries.filter((e) => e.date >= cut) // เก็บย้อนหลัง 14 วันในเครื่อง
   }
   const saveEntries = () => lsSet(K.entries, entries)
   function getSession() {
@@ -524,8 +683,9 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     if (!s || s.date !== todayKey() || !branchById(s.branchId) || !String(s.user || '').trim()) return null
     return s
   }
-  // รายการที่แสดง: ของสาขานี้ วันนี้ หรือยังไม่ส่ง
-  const myEntries = () => entries.filter((e) => SESSION && e.branchId === SESSION.branchId && (e.date === todayKey() || !e.sent)).sort((a, b) => b.ts - a.ts)
+  // รายการที่แสดง: ของสาขานี้ ตามวันที่เลือก (ค่าเริ่มต้น = วันนี้)
+  const myEntries = (d) => entries.filter((e) => SESSION && e.branchId === SESSION.branchId && e.date === (d || selDate)).sort((a, b) => b.ts - a.ts)
+  const myDates = () => Array.from(new Set(entries.filter((e) => SESSION && e.branchId === SESSION.branchId).map((e) => e.date).concat([todayKey()]))).sort().reverse()
 
   /* ---------- Toast ---------- */
   let tt = null
@@ -535,34 +695,6 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     el.className = 'toast show ' + (type === 'err' ? 'err' : '')
     clearTimeout(tt)
     tt = setTimeout(() => { el.className = 'toast' }, ms || 2200)
-  }
-
-  /* ---------- เรียก Apps Script ---------- */
-  async function api(action, payload, override) {
-    const st = getSettings()
-    const url = (override && override.url != null ? override.url : st.url) || ''
-    const pass = override && override.pass != null ? override.pass : st.pass
-    if (!url) throw new Error('ยังไม่ได้ตั้งค่า URL ของ Apps Script (ไปที่ปุ่ม ⚙ ตั้งค่า)')
-    const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null
-    const timer = ctrl ? setTimeout(() => ctrl.abort(), 60000) : null
-    let res
-    try {
-      res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(Object.assign({ action: action, pass: pass }, payload || {})),
-        redirect: 'follow',
-        signal: ctrl ? ctrl.signal : undefined
-      })
-    } catch (e) {
-      throw new Error(e && e.name === 'AbortError' ? 'เซิร์ฟเวอร์ตอบช้าเกินไป ลองใหม่อีกครั้ง' : 'เชื่อมต่อไม่ได้ — ตรวจสอบอินเทอร์เน็ต')
-    } finally { if (timer) clearTimeout(timer) }
-    let json
-    try { json = await res.json() } catch (e) {
-      throw new Error('เซิร์ฟเวอร์ตอบกลับผิดรูปแบบ — ตรวจว่า Deploy เป็น "ทุกคน (Anyone)" และใช้ URL ที่ลงท้าย /exec')
-    }
-    if (!json || !json.ok) throw new Error((json && (json.message || json.error)) || 'เกิดข้อผิดพลาดจากเซิร์ฟเวอร์')
-    return json.data
   }
 
   /* ---------- Modal ---------- */
@@ -633,13 +765,14 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
       }
       const name = $('#f-name', sh).value.trim()
       const pack = $('#f-pack', sh).value.trim()
-      if (!products[code] && name) { products[code] = [name, pack]; pending[code] = [name, pack]; saveProducts() }
+      if (!products[code] && name) { extra[code] = [name, pack]; saveProducts() }
       if (prev) {
-        prev.name = name; prev.pack = pack; prev.qty = q; prev.note = note; prev.sent = false
+        prev.name = name; prev.pack = pack; prev.qty = q; prev.note = note
         toast('แก้ไขแล้ว')
       } else {
         const now = new Date()
-        entries.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), ts: now.getTime(), date: todayKey(now), time: timeKey(now), branchId: SESSION.branchId, branch: branchById(SESSION.branchId).name, user: SESSION.user, code: code, name: name, pack: pack, qty: q, note: note, sent: false })
+        entries.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), ts: now.getTime(), date: todayKey(now), time: timeKey(now), branchId: SESSION.branchId, branch: branchById(SESSION.branchId).name, user: SESSION.user, code: code, name: name, pack: pack, qty: q, note: note })
+        selDate = todayKey()
         toast('บันทึกแล้ว: ' + (name || code) + ' × ' + fmtNum(q))
         try { if (navigator.vibrate) navigator.vibrate(40) } catch (e) { /* ไม่เป็นไร */ }
         pushRecent(name || code, q)
@@ -670,8 +803,9 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     const save = (note) => {
       const q = Number(val)
       const now = new Date()
-      entries.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), ts: now.getTime(), date: todayKey(now), time: timeKey(now), branchId: SESSION.branchId, branch: branchById(SESSION.branchId).name, user: SESSION.user, code: code, name: name, pack: pack, qty: q, note: note || '', sent: false })
+      entries.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), ts: now.getTime(), date: todayKey(now), time: timeKey(now), branchId: SESSION.branchId, branch: branchById(SESSION.branchId).name, user: SESSION.user, code: code, name: name, pack: pack, qty: q, note: note || '' })
       saveEntries()
+      selDate = todayKey()
       toast('บันทึกแล้ว: ' + (name || code) + ' × ' + fmtNum(q))
       try { if (navigator.vibrate) navigator.vibrate(40) } catch (e) { /* ไม่เป็นไร */ }
       pushRecent(name || code, q)
@@ -724,22 +858,123 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     try { sh.focus() } catch (e) { /* ไม่เป็นไร */ }
   }
 
+  // ค้นรหัสจากตัวเลขบางส่วน: พิมพ์ 01004 / 1004 ก็เจอ FG01004 ไม่ต้องพิมพ์ FG/PK
+  function matchCodes(q) {
+    q = String(q || '').toUpperCase().replace(/\s+/g, '')
+    const res = { list: [], exact: [] }
+    if (!q) return res
+    const digits = /^\d+$/.test(q)
+    const qz = q.replace(/^0+/, '')
+    const b0 = [], b1 = [], b2 = []
+    for (const it of codeList) {
+      if (it.c === q || (digits && (it.d === q || (qz && it.z === qz)))) b0.push(it.c)
+      else if (it.c.indexOf(q) === 0 || (digits && (it.d.indexOf(q) === 0 || (qz && q === qz && it.z.indexOf(qz) === 0)))) b1.push(it.c)
+      else if (it.c.indexOf(q) > 0 || (digits && it.d.indexOf(q) >= 0)) b2.push(it.c)
+    }
+    res.exact = b0
+    res.list = b0.concat(b1, b2)
+    return res
+  }
+  // รหัสจากสแกน/พิมพ์ → รหัสเต็มในฐาน (ถ้าพิมพ์แค่ตัวเลขแล้วตรงตัวเดียว)
+  function resolveCode(code) {
+    if (products[code]) return code
+    const m = matchCodes(code)
+    return m.exact.length === 1 ? m.exact[0] : code
+  }
+  const todaySum = (code) => entries.filter((e) => SESSION && e.branchId === SESSION.branchId && e.code === code && e.date === todayKey()).reduce((a, e) => a + e.qty, 0)
+  function topPrefixes() {
+    const freq = {}
+    codeList.forEach((it) => { const m = /^[A-Z]+/.exec(it.c); if (m) freq[m[0]] = (freq[m[0]] || 0) + 1 })
+    return Object.keys(freq).sort((a, b) => freq[b] - freq[a]).slice(0, 4)
+  }
+  const SHOW_MAX = 12
   function openCodeModal() {
+    let val = ''
+    let alpha = false
+    let res = { list: [], exact: [] }
+    const prefixes = topPrefixes()
     const sh = openModal(
       '<div class="m-title">กรอกรหัสสินค้า</div>' +
-      '<label class="field"><span>รหัสสินค้า / บาร์โค้ด</span><input id="f-code" type="text" autocomplete="off" autocapitalize="characters"></label>' +
-      '<div class="err" id="f-err"></div>' +
-      '<div class="m-actions"><button type="button" class="btn btn-ghost" data-x="no">ยกเลิก</button><button type="button" class="btn btn-primary" data-x="ok">ถัดไป</button></div>')
-    const inp = $('#f-code', sh)
-    setTimeout(() => { try { inp.focus() } catch (e) { /* ไม่เป็นไร */ } }, 60)
-    const go = () => {
-      const c = parseCode(inp.value)
-      if (!c) { $('#f-err', sh).textContent = 'กรุณากรอกรหัสสินค้า'; return }
-      openQuickQty(c, !scanOv)
+      '<div class="kp-disp empty" id="cd-disp">พิมพ์แค่ตัวเลข เช่น 01004</div>' +
+      '<div class="pre-chips">' +
+      prefixes.map((p) => '<button type="button" class="pre-chip" data-cd="P:' + esc(p) + '">' + esc(p) + '</button>').join('') +
+      '<button type="button" class="pre-chip" data-cd="C" style="margin-left:auto">ล้าง</button></div>' +
+      '<div class="sugg" id="cd-sugg"></div>' +
+      '<div id="cd-pad"></div>' +
+      '<div class="m-actions"><button type="button" class="btn btn-ghost" data-cd="X">ปิด</button>' +
+      '<button type="button" class="btn btn-primary" id="cd-ok" data-cd="OK" disabled>เลือก</button></div>')
+    sh.tabIndex = -1
+    const one = () => (res.list.length === 1 ? res.list[0] : res.exact.length === 1 ? res.exact[0] : '')
+    const padHtml = () => {
+      if (alpha) {
+        return '<div class="kp alpha">' +
+          'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map((l) => '<button type="button" class="kp-key" data-cd="K:' + l + '">' + l + '</button>').join('') +
+          '<button type="button" class="kp-key fn" data-cd="T">123</button>' +
+          '<button type="button" class="kp-key fn" data-cd="B" aria-label="ลบ">⌫</button></div>'
+      }
+      return '<div class="kp">' +
+        ['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((k) => '<button type="button" class="kp-key" data-cd="K:' + k + '">' + k + '</button>').join('') +
+        '<button type="button" class="kp-key fn" data-cd="T">ABC</button>' +
+        '<button type="button" class="kp-key" data-cd="K:0">0</button>' +
+        '<button type="button" class="kp-key fn" data-cd="B" aria-label="ลบ">⌫</button></div>'
     }
-    $('[data-x=no]', sh).onclick = closeModal
-    $('[data-x=ok]', sh).onclick = go
-    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); go() } })
+    const update = () => {
+      const disp = $('#cd-disp', sh)
+      disp.textContent = val || 'พิมพ์แค่ตัวเลข เช่น 01004'
+      disp.classList.toggle('empty', !val)
+      res = matchCodes(val)
+      const box = $('#cd-sugg', sh)
+      if (!val) {
+        box.innerHTML = '<div class="sugg-hint">ไม่ต้องพิมพ์ FG / PK — พิมพ์ตัวเลขบางส่วนแล้วแตะรหัสที่ต้องการ</div>'
+      } else if (!res.list.length) {
+        box.innerHTML = '<div class="sugg-hint">ไม่พบรหัสที่มี "' + esc(val) + '" ในฐานสินค้า' +
+          (/[A-Z]/.test(val) && /\d/.test(val) && val.length >= 4 ? '<div style="margin-top:8px"><button type="button" class="btn btn-secondary" data-cd="U">ใช้รหัส ' + esc(val) + ' (ไม่มีในฐาน)</button></div>' : '<div style="margin-top:4px">ถ้าเป็นสินค้าใหม่ แตะ ABC แล้วพิมพ์รหัสเต็ม หรือเพิ่มที่แท็บ "ฐานสินค้า"</div>') + '</div>'
+      } else {
+        box.innerHTML = res.list.slice(0, SHOW_MAX).map((c) => {
+          const pd = products[c] || ['', '']
+          const s = todaySum(c)
+          return '<button type="button" class="row' + (s ? ' ok' : '') + '" data-cd="S:' + esc(c) + '" style="grid-template-columns:minmax(0,1fr) auto">' +
+            '<div><div class="row-name">' + esc(pd[0] || c) + '</div><div class="row-sub"><b>' + esc(c) + '</b>' + esc(pd[1] || '') + '</div></div>' +
+            '<div class="row-cnt">' + (s ? '<span class="lbl">วันนี้</span><b>' + fmtNum(s) + '</b>' : '<span class="dash">›</span>') + '</div></button>'
+        }).join('') + (res.list.length > SHOW_MAX ? '<div class="sugg-hint">มีอีก ' + (res.list.length - SHOW_MAX) + ' รหัส — พิมพ์ตัวเลขเพิ่มเพื่อให้แคบลง</div>' : '')
+      }
+      $('#cd-ok', sh).disabled = !one()
+      $('#cd-pad', sh).innerHTML = padHtml()
+    }
+    const pick = (c) => { closeModal(); openQuickQty(c, !scanOv) }
+    sh.addEventListener('click', (e) => {
+      const t = e.target.closest('[data-cd]')
+      if (!t || t.disabled) return
+      const v = t.dataset.cd
+      const i = v.indexOf(':')
+      const cmd = i >= 0 ? v.slice(0, i) : v
+      const arg = i >= 0 ? v.slice(i + 1) : ''
+      if (cmd === 'K') { if (val.length < 20) val += arg; update() }
+      else if (cmd === 'P') { val += arg; update() }
+      else if (cmd === 'B') { val = val.slice(0, -1); update() }
+      else if (cmd === 'C') { val = ''; update() }
+      else if (cmd === 'T') { alpha = !alpha; update() }
+      else if (cmd === 'S') pick(arg)
+      else if (cmd === 'U') pick(val)
+      else if (cmd === 'OK') { if (one()) pick(one()) }
+      else if (cmd === 'X') closeModal()
+    })
+    sh.addEventListener('keydown', (e) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return
+      if (e.key === 'Enter') { e.preventDefault(); if (one()) pick(one()); return }
+      if (e.key === 'Escape') { closeModal(); return }
+      if (e.target && e.target.tagName === 'INPUT') return
+      if (/^[a-zA-Z0-9]$/.test(e.key)) { e.preventDefault(); if (val.length < 20) val += e.key.toUpperCase(); update() }
+      else if (e.key === 'Backspace') { e.preventDefault(); val = val.slice(0, -1); update() }
+    })
+    // วางรหัสจากคลิปบอร์ด / เครื่องยิงบาร์โค้ดที่พิมพ์เป็นข้อความ
+    sh.addEventListener('paste', (e) => {
+      const t = (e.clipboardData && e.clipboardData.getData('text')) || ''
+      const c = parseCode(t)
+      if (c) { e.preventDefault(); val = c.slice(0, 20); update() }
+    })
+    update()
+    try { sh.focus() } catch (e) { /* ไม่เป็นไร */ }
   }
 
   /* ---------- สแกน QR ---------- */
@@ -807,37 +1042,7 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     if (code === lastScan.code && now - Math.max(lastScan.at, lastModalClose) < 2500) return
     lastScan = { code: code, at: now }
     try { if (navigator.vibrate) navigator.vibrate(60) } catch (e) { /* ไม่เป็นไร */ }
-    openQuickQty(code, false)
-  }
-
-  /* ---------- ส่งเข้า Google Sheet ---------- */
-  async function sendAll() {
-    if (sending) return
-    const list = myEntries().filter((e) => !e.sent).reverse() // เรียงเก่า→ใหม่ ลงชีต
-    if (!list.length) { toast('ไม่มีรายการที่ยังไม่ได้ส่ง'); return }
-    sending = true
-    render()
-    try {
-      const pk = Object.keys(pending)
-      if (pk.length) {
-        try {
-          await api('saveProducts', { mode: 'merge', items: pk.map((c) => [c, pending[c][0], pending[c][1]]) })
-          pending = {}; saveProducts()
-        } catch (e) { /* ไว้ส่งรอบหน้า ไม่ให้ขวางการส่งรายการ */ }
-      }
-      const r = await api('append', {
-        mode: M,
-        entries: list.map((e) => ({ id: e.id, date: e.date, time: e.time, branch: e.branch, user: e.user, code: e.code, name: e.name, pack: e.pack || '', qty: e.qty, note: e.note }))
-      })
-      const ids = new Set(list.map((e) => e.id))
-      entries.forEach((e) => { if (ids.has(e.id)) e.sent = true })
-      saveEntries()
-      toast('ส่งเข้าชีต "' + CFG.SHEET + '" แล้ว ' + list.length + ' รายการ' + (r && r.skipped ? ' (ซ้ำ ' + r.skipped + ')' : ''), 'ok', 3500)
-    } catch (e) {
-      toast('ส่งไม่สำเร็จ: ' + e.message + ' (ข้อมูลยังอยู่ในเครื่อง)', 'err', 5000)
-    }
-    sending = false
-    render()
+    openQuickQty(resolveCode(code), false)
   }
 
   /* ---------- ส่งออก Excel ---------- */
@@ -917,7 +1122,7 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     if (!list.length) { toast('ไม่มีรายการให้ส่งออก', 'err'); return }
     const heads = ['วันที่', 'เวลา', 'สาขา', 'ผู้บันทึก', 'รหัสสินค้า', 'ชื่อสินค้า', 'Packsize', 'จำนวน', CFG.NOTE_HEAD]
     const rows = list.map((e) => [e.date, e.time, e.branch, e.user, e.code, e.name, e.pack || '', e.qty, e.note])
-    const name = (CFG.SHEET + '_' + SESSION_BRANCH().name + '_' + todayKey()).replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, '_') + '.xlsx'
+    const name = (CFG.SHEET + '_' + SESSION_BRANCH().name + '_' + selDate).replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, '_') + '.xlsx'
     try {
       const url = URL.createObjectURL(buildXlsx(heads, rows, [12, 8, 16, 14, 16, 36, 12, 10, 30], CFG.SHEET))
       const a = document.createElement('a')
@@ -928,6 +1133,40 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     } catch (e) { toast('ส่งออกไฟล์ไม่สำเร็จ: ' + e.message, 'err', 4500) }
   }
   const SESSION_BRANCH = () => branchById(SESSION.branchId)
+  /* ---------- พิมพ์ใบรับเข้า / ใบตีคืน ---------- */
+  function printEntries() {
+    const isRet = CFG.MODE === 'return'
+    const dTH = (k) => { const p = String(k).split('-'); return p.length === 3 ? Number(p[2]) + '/' + Number(p[1]) + '/' + p[0] : k }
+    window.PrintKit.open({
+      name: 'พิมพ์ใบ' + CFG.SHEET + 'สินค้า',
+      options: [['list', 'แยกทุกรายการ'], ['sum', 'รวมยอดตามรหัสสินค้า']],
+      build: (m) => {
+        const list = myEntries().slice().sort((a, b) => a.ts - b.ts)
+        const total = list.reduce((a, e) => a + e.qty, 0)
+        const users = Array.from(new Set(list.map((e) => e.user).filter(Boolean))).join(', ')
+        const doc = {
+          kicker: isRet ? 'GOODS RETURN' : 'GOODS RECEIVING', title: 'ใบ' + CFG.SHEET + 'สินค้า', sub: 'สาขา' + SESSION_BRANCH().name,
+          meta: [['สาขา', SESSION_BRANCH().name], ['วันที่', dTH(selDate)], ['ผู้บันทึก', users || SESSION.user], ['จำนวน', list.length + ' รายการ · รวม ' + fmtNum(total) + ' ชิ้น']],
+          noteBox: 'หมายเหตุ:',
+          sign: isRet ? ['ผู้ส่งคืน (สาขา)', 'ผู้รับคืน / ขนส่ง', 'ผู้อนุมัติ'] : ['ผู้ส่งสินค้า', 'ผู้รับสินค้า', 'ผู้ตรวจสอบ'],
+          empty: 'ยังไม่มีรายการ' + CFG.SHEET, footRight: 'แอป' + CFG.TITLE
+        }
+        if (m === 'sum') {
+          const g = new Map()
+          list.forEach((e) => { const x = g.get(e.code) || { code: e.code, name: e.name, pack: e.pack, qty: 0, n: 0, notes: [] }; x.qty += e.qty; x.n++; if (e.note && x.notes.indexOf(e.note) < 0) x.notes.push(e.note); g.set(e.code, x) })
+          const rows = Array.from(g.values()).sort((a, b) => (a.code < b.code ? -1 : 1))
+          doc.cols = [{ h: 'ลำดับ', cls: 'c', w: '7%' }, { h: 'รหัสสินค้า', cls: 'code', w: '13%' }, { h: 'ชื่อสินค้า' }, { h: 'หน่วย', w: '14%' }, { h: 'จำนวนรวม', cls: 'n', w: '11%' }, { h: CFG.NOTE_HEAD, w: '20%' }]
+          doc.rows = rows.map((x, i) => ({ cells: [i + 1, x.code, x.name || '(ไม่มีในฐานสินค้า)', x.pack, fmtNum(x.qty), x.notes.join(', ')] }))
+          doc.foot = ['', '', 'รวม ' + rows.length + ' รหัส', '', fmtNum(total), '']
+        } else {
+          doc.cols = [{ h: 'ลำดับ', cls: 'c', w: '7%' }, { h: 'เวลา', cls: 'c', w: '8%' }, { h: 'รหัสสินค้า', cls: 'code', w: '13%' }, { h: 'ชื่อสินค้า' }, { h: 'หน่วย', w: '13%' }, { h: 'จำนวน', cls: 'n', w: '9%' }, { h: CFG.NOTE_HEAD, w: '18%' }]
+          doc.rows = list.map((e, i) => ({ cells: [i + 1, e.time, e.code, e.name || '(ไม่มีในฐานสินค้า)', e.pack, fmtNum(e.qty), e.note || ''] }))
+          doc.foot = ['', '', '', 'รวม ' + list.length + ' รายการ', '', fmtNum(total), '']
+        }
+        return doc
+      }
+    })
+  }
 
   /* ---------- หน้าจอ ---------- */
   function setTop(title, sub, showBtns, tab) {
@@ -955,10 +1194,10 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     $('#dock').hidden = true
     $('#view').innerHTML =
       '<div class="login-screen">' +
+      '<a class="login-home" href="https://suphatsonw-glitch.github.io/homepage/" aria-label="กลับหน้าโฮม">🏠 หน้าโฮม</a>' +
       FRUITS.map((f) => '<div class="fruit-side" style="' + f[1] + ';--k:' + f[2] + '">' + f[0] + '</div>').join('') +
       LEAVES.map((l) => '<div class="leaf" style="left:' + l[0] + ';animation-duration:' + l[1] + 's;animation-delay:' + l[2] + 's;font-size:' + l[3] + 'px">' + l[4] + '</div>').join('') +
       '<div class="login-brand"><div class="login-logo">' + CFG.ICON + '</div><div class="b1">' + esc(CFG.TITLE) + '</div><div class="b2">' + esc(CFG.SUBTITLE) + '</div></div>' +
-      (st.url ? '' : '<div class="login-warn">⚠️ เครื่องนี้ยังไม่ได้ตั้งค่า URL ของ Google Sheet — แตะ ⚙ มุมขวาล่างเพื่อตั้งค่า</div>') +
       '<div class="login-card">' +
       '<h2>🔑 เข้าสู่ระบบสาขา</h2>' +
       '<label class="field"><span class="lbl">สาขา</span><select id="lg-branch"><option value="">— เลือกสาขา —</option>' +
@@ -973,7 +1212,6 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
       '<button type="button" class="pin-key fn" data-act="pin-key" data-k="B" aria-label="ลบ">⌫</button></div>' +
       '<button type="button" class="btn btn-primary btn-block" id="lg-go" data-act="login" disabled>เข้าสู่ระบบ</button>' +
       '</div>' +
-      '<button type="button" class="login-gear" data-act="setup" aria-label="ตั้งค่า">⚙</button>' +
       '</div>'
     document.querySelectorAll('.fruit-side').forEach((el, i) => {
       setTimeout(() => {
@@ -1022,52 +1260,42 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     saveSettings({ user: name, lastBranch: b.id })
     SESSION = getSession()
     view = 'main'
+    selDate = todayKey()
     render()
-    if (getSettings().url && (!prodCount() || Date.now() - psync > 6 * 3600000)) syncProducts(true).then(() => { if (view === 'main') render() })
     toast('ยินดีต้อนรับ ' + name + ' · สาขา' + b.name)
   }
   function viewMain() {
+    const dates = myDates()
+    if (dates.indexOf(selDate) < 0) selDate = todayKey()
+    const isToday = selDate === todayKey()
     const list = myEntries()
-    const today = list.filter((e) => e.date === todayKey())
-    const unsent = list.filter((e) => !e.sent)
-    const total = today.reduce((a, e) => a + e.qty, 0)
+    const total = list.reduce((a, e) => a + e.qty, 0)
+    const nCodes = new Set(list.map((e) => e.code)).size
+    const dLabel = (d) => (d === todayKey() ? 'วันนี้' : d.slice(8, 10) + '/' + d.slice(5, 7))
     setTop(CFG.TITLE, 'สาขา' + SESSION_BRANCH().name + ' · ' + SESSION.user, true, 'main')
     $('#view').innerHTML =
-      '<div class="stats s3 anim"><div class="stat"><b>' + today.length + '</b><span>รายการวันนี้</span></div><div class="stat ok"><b>' + fmtNum(total) + '</b><span>' + esc(CFG.TOTAL_LABEL) + '</span></div><div class="stat warn"><b>' + unsent.length + '</b><span>ยังไม่ส่งชีต</span></div></div>' +
+      '<div class="stats s3 anim"><div class="stat"><b>' + list.length + '</b><span>รายการ' + (isToday ? 'วันนี้' : '') + '</span></div><div class="stat ok"><b>' + fmtNum(total) + '</b><span>' + esc(CFG.TOTAL_LABEL) + '</span></div><div class="stat"><b>' + nCodes + '</b><span>รหัสสินค้า</span></div></div>' +
       '<div class="stack">' +
       '<button type="button" class="act primary" data-act="scan"><span class="ic">📷</span><span class="tx"><b>สแกน QR สินค้า</b><small>เล็งที่ QR แล้วใส่จำนวน' + esc(CFG.SHEET) + '</small></span><span class="chev">›</span></button>' +
-      '<button type="button" class="act" data-act="code"><span class="ic">🔢</span><span class="tx"><b>กรอกรหัสเอง</b><small>พิมพ์รหัสสินค้า / บาร์โค้ด</small></span><span class="chev">›</span></button></div>' +
-      '<div class="sec">รายการ' + esc(CFG.SHEET) + 'วันนี้</div>' +
+      '<button type="button" class="act" data-act="code"><span class="ic">🔢</span><span class="tx"><b>กรอกรหัสเอง</b><small>พิมพ์แค่ตัวเลขบางส่วน แล้วเลือกรหัสจากรายการ</small></span><span class="chev">›</span></button></div>' +
+      (dates.length > 1 ? '<div class="chips" style="margin:14px 0 0">' + dates.map((d) => '<button type="button" class="chip' + (d === selDate ? ' on' : '') + '" data-act="pick-date" data-d="' + esc(d) + '">' + esc(dLabel(d)) + '</button>').join('') + '</div>' : '') +
+      '<div class="sec">รายการ' + esc(CFG.SHEET) + (isToday ? 'วันนี้' : 'วันที่ ' + esc(selDate)) + '</div>' +
       (list.length ? list.map((e) =>
-        '<div class="ent"><div class="info"><div class="nm">' + esc(e.name || e.code) + '</div><div class="sub">' + esc(e.code) + ' · ' + esc(e.time) + (e.date !== todayKey() ? ' · ' + esc(e.date) : '') + (e.note ? ' · ' + esc(e.note) : '') + '</div></div>' +
-        '<span class="sbadge' + (e.sent ? ' ok' : '') + '">' + (e.sent ? 'ส่งแล้ว' : 'ยังไม่ส่ง') + '</span>' +
+        '<div class="ent"><div class="info"><div class="nm">' + esc(e.name || e.code) + '</div><div class="sub">' + esc(e.code) + ' · ' + esc(e.time) + (e.note ? ' · ' + esc(e.note) : '') + '</div></div>' +
         '<div class="qty">' + fmtNum(e.qty) + '</div>' +
         '<button type="button" class="ib" data-act="edit" data-id="' + esc(e.id) + '" aria-label="แก้ไข">✎</button>' +
         '<button type="button" class="ib" data-act="del" data-id="' + esc(e.id) + '" aria-label="ลบ">🗑</button></div>').join('')
-        : '<div class="emp">ยังไม่มีรายการ — กด "สแกน QR" เพื่อเริ่ม</div>')
+        : '<div class="emp">ยังไม่มีรายการ — กด "สแกน QR" หรือ "กรอกรหัสเอง" เพื่อเริ่ม</div>')
     const dock = $('#dock')
     dock.hidden = false
     dock.innerHTML =
-      '<button type="button" class="btn grow btn-primary" data-act="send"' + (sending || !unsent.length ? ' disabled' : '') + '>' + (sending ? 'กำลังส่ง…' : '☁️ ส่งเข้าชีต (' + unsent.length + ')') + '</button>' +
-      '<button type="button" class="btn btn-secondary" data-act="xlsx"' + (list.length ? '' : ' disabled') + '>📗 Excel</button>'
-  }
-  function viewSetup() {
-    const st = getSettings()
-    setTop('ตั้งค่า', 'เชื่อมต่อ Google Sheet', false, '')
-    $('#dock').hidden = true
-    $('#view').innerHTML =
-      '<div class="card"><label class="field"><span>URL ของ Apps Script (Web app ลงท้าย /exec)</span><input id="set-url" type="url" value="' + esc(st.url) + '" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off"></label>' +
-      '<label class="field"><span>รหัสผ่านระบบ (ถ้าตั้งไว้ในสคริปต์)</span><input id="set-pass" type="password" value="' + esc(st.pass) + '" autocomplete="off"></label>' +
-      '<div style="display:flex;gap:8px"><button type="button" class="btn btn-secondary grow" data-act="test-conn">🔌 ทดสอบการเชื่อมต่อ</button><button type="button" class="btn btn-primary grow" data-act="save-settings">บันทึก</button></div>' +
-      '<div id="set-result" style="margin-top:12px"></div></div>' +
-      '<p style="text-align:center"><button type="button" class="btn btn-secondary" data-act="back">‹ กลับ</button></p>'
+      '<button type="button" class="btn btn-secondary" data-act="print"' + (list.length ? '' : ' disabled') + '>🖨️ พิมพ์</button>' +
+      '<button type="button" class="btn grow btn-primary" data-act="xlsx"' + (list.length ? '' : ' disabled') + '>📗 ส่งออก Excel (' + list.length + ' รายการ)</button>'
   }
   function render() {
     SESSION = getSession()
-    if (view !== 'setup' && !SESSION) view = 'login'
-    if (view === 'products' && !SESSION) view = 'login'
+    if (!SESSION) view = 'login'
     if (view === 'login') viewLogin()
-    else if (view === 'setup') viewSetup()
     else if (view === 'products') viewProducts()
     else viewMain()
   }
@@ -1197,7 +1425,6 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     box.innerHTML =
       '<div class="card"><b>พบ ' + draft.rows.length.toLocaleString('en-US') + ' รายการ</b>' + (draft.skipped ? ' <span style="color:var(--muted)">(ข้ามแถวที่ไม่มีรหัส ' + draft.skipped + ')</span>' : '') +
       '<div style="font-size:13px;color:var(--muted);margin:6px 0">ตัวอย่าง (รหัส | ชื่อ | Packsize)<br>' + draft.rows.slice(0, 4).map((r) => esc(r.join(' | '))).join('<br>') + '</div>' +
-      '<label class="field"><span>วิธีบันทึก</span><select id="p-mode"><option value="merge">เพิ่ม/อัปเดต — รหัสเดิมถูกแก้ตามไฟล์ รหัสใหม่ถูกเพิ่ม ของเดิมที่ไม่อยู่ในไฟล์ยังอยู่ (แนะนำ)</option><option value="replace">แทนที่ทั้งหมด — ลบฐานเดิมแล้วใช้ไฟล์นี้แทน</option></select></label>' +
       '<button type="button" class="btn btn-primary btn-block" data-act="p-save">💾 บันทึกลงฐานสินค้า</button></div>'
   }
   async function readPasted() {
@@ -1207,64 +1434,44 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
   }
   async function saveDraft() {
     if (!draft) return
-    const mode = $('#p-mode').value
-    const go = async () => {
-      const rows = draft.rows
-      const btn = $('[data-act=p-save]')
-      if (btn) { btn.disabled = true; btn.textContent = 'กำลังบันทึก…' }
-      if (mode === 'replace') products = {}
-      rows.forEach((r) => { products[r[0]] = [r[1], r[2]]; delete pending[r[0]] })
-      if (mode === 'replace') pending = {}
-      psync = Date.now()
-      saveProducts()
-      let msg = 'บันทึกในเครื่องแล้ว ' + rows.length + ' รายการ'
-      if (getSettings().url) {
-        try {
-          for (let i = 0; i < rows.length; i += 1500) {
-            if (btn) btn.textContent = 'กำลังส่งขึ้นชีต… ' + Math.min(i + 1500, rows.length) + '/' + rows.length
-            await api('saveProducts', { mode: i === 0 ? mode : 'merge', items: rows.slice(i, i + 1500) })
-          }
-          msg = 'บันทึกลงฐานสินค้าในชีตแล้ว ' + rows.length + ' รายการ'
-        } catch (e) { toast('บันทึกในเครื่องแล้ว แต่ส่งขึ้นชีตไม่สำเร็จ: ' + e.message, 'err', 6000); draft = null; render(); return }
-      } else msg += ' (ยังไม่ได้ตั้งค่า URL — ยังไม่ขึ้นชีต)'
-      toast(msg, 'ok', 3500)
-      draft = null
-      render()
-    }
-    if (mode === 'replace') confirmBox('แทนที่ฐานสินค้าทั้งหมด', 'ฐานสินค้าเดิมทั้งหมดจะถูกลบ แล้วใช้ ' + draft.rows.length + ' รายการจากไฟล์นี้แทน ยืนยัน?', 'แทนที่', go)
-    else go()
+    const rows = draft.rows
+    rows.forEach((r) => { extra[r[0]] = [r[1], r[2]] })
+    saveProducts()
+    toast('เพิ่ม/อัปเดตในฐานสินค้าของเครื่องนี้แล้ว ' + rows.length + ' รายการ', 'ok', 3500)
+    draft = null
+    render()
   }
   async function addOne() {
     const code = parseCode($('#p-code').value), name = $('#p-name').value.trim(), pack = $('#p-pack').value.trim()
     if (!code || !name) { toast('ใส่รหัสและชื่อสินค้าก่อน', 'err'); return }
-    products[code] = [name, pack]; pending[code] = [name, pack]; saveProducts()
-    toast('เพิ่ม ' + name + ' แล้ว (จะส่งขึ้นชีตตอนกดส่งเข้าชีต)')
+    extra[code] = [name, pack]; saveProducts()
+    toast((BASE[code] ? 'แก้ไข ' : 'เพิ่ม ') + code + ' ' + name + ' แล้ว')
     render()
   }
-  async function syncProducts(silent) {
-    if (!getSettings().url) { if (!silent) toast('ยังไม่ได้ตั้งค่า URL', 'err'); return }
-    try {
-      const d = await api('getProducts')
-      const map = {}
-      ;(d.items || []).forEach((r) => { const c = parseCode(r[0]); if (c) map[c] = [String(r[1] || ''), String(r[2] || '')] })
-      Object.keys(pending).forEach((c) => { map[c] = pending[c] })
-      products = map
-      psync = Date.now()
-      saveProducts()
-      if (!silent) toast('ซิงค์ฐานสินค้าแล้ว ' + prodCount().toLocaleString('en-US') + ' รายการ', 'ok')
-    } catch (e) { if (!silent) toast('ซิงค์ไม่สำเร็จ: ' + e.message, 'err', 4500) }
+  function prodSearchHtml(q) {
+    q = String(q || '').trim()
+    if (!q) return '<div class="sugg-hint">พิมพ์ตัวเลขรหัส หรือชื่อสินค้า เพื่อเช็คว่ามีในฐานไหม</div>'
+    let list = matchCodes(q).list
+    if (!list.length) { const n = q.toLowerCase(); list = codeList.filter((it) => String(products[it.c][0] || '').toLowerCase().indexOf(n) >= 0).map((it) => it.c) }
+    if (!list.length) return '<div class="sugg-hint">ไม่พบ "' + esc(q) + '"</div>'
+    return list.slice(0, 30).map((c) => '<div class="row" style="grid-template-columns:minmax(0,1fr) auto"><div><div class="row-name">' + esc(products[c][0] || c) + '</div><div class="row-sub"><b>' + esc(c) + '</b>' + esc(products[c][1] || '') + (extra[c] ? '<span class="tag">' + (BASE[c] ? 'แก้ในเครื่องนี้' : 'เพิ่มในเครื่องนี้') + '</span>' : '') + '</div></div>' +
+      (extra[c] ? '<button type="button" class="ib" data-act="p-del" data-id="' + esc(c) + '" aria-label="ลบ">🗑</button>' : '<span></span>') + '</div>').join('') +
+      (list.length > 30 ? '<div class="sugg-hint">มีอีก ' + (list.length - 30) + ' รายการ</div>' : '')
   }
   function viewProducts() {
-    setTop('ฐานสินค้า', prodCount().toLocaleString('en-US') + ' รายการ' + (psync ? ' · ซิงค์ล่าสุด ' + new Date(psync).toLocaleString('th-TH') : ''), true, 'products')
+    const nExtra = Object.keys(extra).length
+    setTop('ฐานสินค้า', prodCount().toLocaleString('en-US') + ' รายการ' + (nExtra ? ' · เพิ่ม/แก้ในเครื่องนี้ ' + nExtra : ''), true, 'products')
     $('#dock').hidden = true
     draft = null
     $('#view').innerHTML =
-      '<div class="card"><h2>📤 อัปโหลดฐานสินค้า</h2><p style="margin:0 0 10px;color:var(--muted);font-size:14px">ไฟล์ Excel (.xlsx) หรือ CSV แถวแรกเป็นหัวคอลัมน์: รหัสสินค้า, ชื่อสินค้า, Packsize (ถ้าไม่มีหัวคอลัมน์ ระบบถือว่า 3 คอลัมน์แรกคือ รหัส, ชื่อ, Packsize) เมื่อมีสินค้าใหม่ จะอัปโหลดไฟล์ใหม่ทั้งไฟล์ก็ได้</p>' +
+      '<div class="card"><h2>🔎 ค้นหาในฐานสินค้า</h2><input id="p-q" class="search" type="search" placeholder="เช่น 01004 หรือ ผักกาด" autocomplete="off" style="margin:8px 0">' +
+      '<div class="sugg" id="p-res" style="max-height:44vh">' + prodSearchHtml('') + '</div></div>' +
+      '<div class="card"><h3>➕ เพิ่มสินค้าทีละรายการ</h3><p style="margin:0 0 10px;color:var(--muted);font-size:14px">ใส่รหัสเต็ม (เช่น FG01099) ถ้าใส่รหัสที่มีอยู่แล้วจะเป็นการแก้ชื่อ/หน่วย</p><label class="field"><span>รหัสสินค้า</span><input id="p-code" type="text" autocomplete="off" autocapitalize="characters"></label><label class="field"><span>ชื่อสินค้า</span><input id="p-name" type="text" autocomplete="off"></label><label class="field"><span>หน่วยนับ / Packsize</span><input id="p-pack" type="text" autocomplete="off"></label><button type="button" class="btn btn-secondary btn-block" data-act="p-add">➕ เพิ่มสินค้า</button></div>' +
+      '<div class="card"><h3>📤 เพิ่มหลายรายการจากไฟล์</h3><p style="margin:0 0 10px;color:var(--muted);font-size:14px">ไฟล์ Excel (.xlsx) หรือ CSV คอลัมน์: รหัสสินค้า, ชื่อสินค้า, หน่วยนับ — รหัสใหม่จะถูกเพิ่ม รหัสเดิมจะถูกแก้ตามไฟล์</p>' +
       '<input id="p-file" type="file" accept=".xlsx,.csv,.txt,.tsv" style="width:100%;margin-bottom:10px">' +
-      '<label class="field"><span>หรือคัดลอกจาก Excel มาวางที่นี่</span><textarea id="p-paste" rows="4" placeholder="รหัส[Tab]ชื่อ[Tab]Packsize"></textarea></label>' +
+      '<label class="field"><span>หรือคัดลอกจาก Excel มาวางที่นี่</span><textarea id="p-paste" rows="3" placeholder="รหัส[Tab]ชื่อ[Tab]หน่วยนับ"></textarea></label>' +
       '<button type="button" class="btn btn-secondary btn-block" data-act="p-read">อ่านข้อมูลที่วาง</button><div id="p-preview" style="margin-top:12px"></div></div>' +
-      '<div class="card"><h3>เพิ่มสินค้าทีละรายการ</h3><label class="field"><span>รหัสสินค้า</span><input id="p-code" type="text" autocomplete="off"></label><label class="field"><span>ชื่อสินค้า</span><input id="p-name" type="text" autocomplete="off"></label><label class="field"><span>Packsize</span><input id="p-pack" type="text" autocomplete="off"></label><button type="button" class="btn btn-secondary btn-block" data-act="p-add">➕ เพิ่มสินค้า</button></div>' +
-      '<div class="card"><button type="button" class="btn btn-secondary btn-block" data-act="p-sync">🔄 ซิงค์ฐานสินค้าจาก Google Sheet</button>' + (Object.keys(pending).length ? '<p style="color:var(--muted);font-size:14px">มีสินค้าใหม่รอส่งขึ้นชีต ' + Object.keys(pending).length + ' รายการ (ส่งพร้อมปุ่มส่งเข้าชีต)</p>' : '') + '</div>' +
+      '<p style="color:var(--muted);font-size:13px;margin:12px 2px">สินค้าที่เพิ่มที่นี่จะอยู่ในเครื่องนี้เท่านั้น — ถ้าต้องการให้ทุกเครื่องเห็น ให้เพิ่มลงไฟล์ฐานสินค้าในเว็บ</p>' +
       '<p style="text-align:center"><button type="button" class="btn btn-secondary" data-act="back">‹ กลับ</button></p>'
     const f = $('#p-file')
     f.onchange = async () => {
@@ -1272,6 +1479,8 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
       $('#p-preview').textContent = 'กำลังอ่านไฟล์…'
       try { showDraft(await readFile(f.files[0])) } catch (e) { $('#p-preview').innerHTML = '<div class="err">' + esc(e.message) + '</div>' }
     }
+    const q = $('#p-q')
+    q.oninput = () => { $('#p-res').innerHTML = prodSearchHtml(q.value) }
   }
 
   /* ---------- Events ---------- */
@@ -1283,32 +1492,27 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     if (act === 'login') doLogin()
     else if (act === 'pin-key') pinPress(el.getAttribute('data-k'))
     else if (act === 'tab-main') { view = 'main'; render() }
-    else if (act === 'setup') { view = 'setup'; render() }
     else if (act === 'back') { view = 'main'; render() }
     else if (act === 'logout') confirmBox('ออกจากระบบ', 'รายการที่ยังไม่ส่งยังอยู่ในเครื่อง ออกจากระบบตอนนี้ได้', 'ออกจากระบบ', () => { closeScanner(); lsSet(K.session, null); view = 'login'; render() })
     else if (act === 'scan') openScanner()
     else if (act === 'scan-close') closeScanner()
     else if (act === 'scan-code') openCodeModal()
     else if (act === 'code') openCodeModal()
-    else if (act === 'send') sendAll()
+    else if (act === 'pick-date') { selDate = el.getAttribute('data-d'); render() }
     else if (act === 'products') { view = 'products'; render() }
     else if (act === 'p-read') readPasted()
     else if (act === 'p-save') saveDraft()
     else if (act === 'p-add') addOne()
-    else if (act === 'p-sync') { await syncProducts(false); if (view === 'products') render() }
+    else if (act === 'p-del') {
+      const c = id
+      confirmBox('ลบสินค้าที่เพิ่มในเครื่องนี้', (BASE[c] ? 'คืนค่า ' + c + ' กลับเป็นข้อมูลจากไฟล์ฐานสินค้า?' : 'ลบ ' + c + ' ออกจากฐานสินค้าของเครื่องนี้?'), 'ตกลง', () => { delete extra[c]; saveProducts(); render() })
+    }
     else if (act === 'xlsx') exportExcel()
+    else if (act === 'print') printEntries()
     else if (act === 'edit') { const e = entries.find((x) => x.id === id); if (e) openEntryModal(e.code, e) }
     else if (act === 'del') {
       const e = entries.find((x) => x.id === id)
-      if (e) confirmBox('ลบรายการ', 'ลบ ' + (e.name || e.code) + ' × ' + fmtNum(e.qty) + ' ?' + (e.sent ? ' (รายการนี้ส่งเข้าชีตไปแล้ว การลบที่นี่ไม่ลบในชีต)' : ''), 'ลบ', () => { entries = entries.filter((x) => x.id !== id); saveEntries(); render() })
-    } else if (act === 'save-settings') { saveSettings({ url: $('#set-url').value.trim(), pass: $('#set-pass').value }); toast('บันทึกการตั้งค่าแล้ว') }
-    else if (act === 'test-conn') {
-      const out = $('#set-result')
-      out.textContent = 'กำลังทดสอบ…'
-      try {
-        const d = await api('ping', {}, { url: $('#set-url').value.trim(), pass: $('#set-pass').value })
-        out.innerHTML = '<b style="color:#1a7a3c">✅ เชื่อมต่อสำเร็จ</b>' + (d && d.sheet ? '<br>ชีต: ' + esc(d.sheet) : '')
-      } catch (e) { out.innerHTML = '<b style="color:#c0392b">❌ ' + esc(e.message) + '</b>' }
+      if (e) confirmBox('ลบรายการ', 'ลบ ' + (e.name || e.code) + ' × ' + fmtNum(e.qty) + ' ?', 'ลบ', () => { entries = entries.filter((x) => x.id !== id); saveEntries(); render() })
     }
   })
 
@@ -1316,8 +1520,7 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
   saveEntries()
   if (getSession()) view = 'main' // เปิดใหม่/รีเฟรชแล้วยังล็อกอินอยู่ ไม่ต้องล็อกอินซ้ำ
   render()
-  if (getSession() && getSettings().url && (!prodCount() || Date.now() - psync > 6 * 3600000)) syncProducts(true).then(() => { if (view === 'main') render() })
-  if (window.__RC_TEST) window.__RC = { entries: () => entries, buildXlsx: buildXlsx, readXlsx: readXlsx, parseDelimited: parseDelimited, rowsToProducts: rowsToProducts }
+  if (window.__RC_TEST) window.__RC = { entries: () => entries, products: () => products, matchCodes: matchCodes, printEntries: printEntries, resolveCode: resolveCode, openCodeModal: openCodeModal, buildXlsx: buildXlsx, readXlsx: readXlsx, parseDelimited: parseDelimited, rowsToProducts: rowsToProducts }
 })()
 
 </script>
