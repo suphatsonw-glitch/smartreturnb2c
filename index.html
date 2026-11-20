@@ -2,11 +2,16 @@
 <html lang="th">
 <head>
 <meta charset="utf-8">
+<meta name="color-scheme" content="only light">
+<meta name="supported-color-schemes" content="light">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0d2e1a">
 <title>ตีคืนสินค้า</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
+:root { color-scheme: only light; }
+input, select, textarea { color-scheme: only light; }
+
 
 :root {
   --bg: #f0f4f0;
@@ -469,6 +474,17 @@ input[type='file'] { padding: 8px; font-size: 14px; }
 .qk-lots { margin: 0 0 10px; padding: 8px 10px; border-radius: 10px; background: #f3f8f4; font-size: 13px; color: #35573f; }
 .qk-lots b { color: #145f2f; }
 .pk-doc tr.sec td { background: #e8f5ee; color: #145f2f; font-weight: 800; padding-top: 6px; padding-bottom: 6px; }
+
+.sap-ban { display: block; width: 100%; text-align: left; border: 0; border-radius: 14px; padding: 12px 14px; margin: 0 0 12px; font: inherit; font-size: 14.5px; font-weight: 700; cursor: pointer; line-height: 1.45; }
+.sap-ban.bad { background: #fdecea; color: #8e1e12; border: 1.5px solid #f1b0a8; } .sap-ban.ok { background: #e8f5ee; color: #145f2f; border: 1.5px solid #b8dfc8; } .sap-ban.info { background: #e3f1fb; color: #1a5e8a; border: 1.5px solid #b5d8ef; }
+.sap-sum { margin: 0 0 8px; color: var(--muted); font-size: 14px; }
+.sap-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; } .sap-chips span { background: #f1f6f2; border: 1px solid #d6e4da; border-radius: 99px; padding: 3px 10px; font-size: 13px; }
+.sap-acts { display: grid; gap: 8px; }
+.sap-prev { background: #f3f8f4; border: 1px solid #d6e4da; border-radius: 12px; padding: 10px 12px; font-size: 14px; line-height: 1.6; }
+.sap-warn { margin-top: 8px; background: #fff6e0; border: 1px solid #f0d58a; color: #6b4e00; border-radius: 10px; padding: 8px 10px; font-size: 13px; }
+
+/* มือถือ: ยกแถบเมนูล่างขึ้นจากขอบจอ 1 นิ้ว ไม่ให้จมใต้แถบเบราว์เซอร์/ปุ่มนำทาง */
+@media (pointer: coarse) { .dock { padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px) + 1in) !important; } }
 </style>
 <style>
 /* ---------- ใบพิมพ์ (PrintKit) ---------- */
@@ -618,6 +634,7 @@ window.PrintKit = (function () {
    SYNC_URL = URL ของ Apps Script ชีตซิงก์ (ลงท้าย /exec) — มือถือกับคอมเห็นรายการเดียวกัน
    ข้อมูลไปอยู่แท็บ ซิงค์รับเข้า_<สาขา> / ซิงค์ตีคืน_<สาขา> ของชีตกลาง · ฐานสินค้าอยู่แท็บ ฐานสินค้า */
 window.APP_CONFIG = {
+  "GI_WAIT_DAYS": 14,
   "SYNC_URL": "https://script.google.com/macros/s/AKfycbwh61f39okKUMOiZYpbgBb0iKws6CJUnzuM2usHoIGxUGbNml35yA5iZj16ssUZ2WP_/exec",
   "MODE": "return",
   "TITLE": "ตีคืนสินค้า",
@@ -676,6 +693,7 @@ window.PRODUCT_DB = {"FG01002":["เบบี้คอส Baby Cos","PACK 300g"]
   <nav class="navtabs" id="navtabs" hidden aria-label="เมนูหลัก">
     <button type="button" class="navtab" data-act="tab-main" data-tab="main">↩️ ตีคืนสินค้า</button>
     <button type="button" class="navtab" data-act="products" data-tab="products">📚 ฐานสินค้า</button>
+    <button type="button" class="navtab" data-act="sapm" data-tab="sap" id="nt-sap" hidden>📋 SAP</button>
   </nav>
   <main class="view scroll" id="view"></main>
   <footer class="dock" id="dock" hidden></footer>
@@ -1626,6 +1644,7 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     document.body.dataset.mode = view === 'login' ? 'login' : 'app'
     const nt = $('#navtabs')
     nt.hidden = !tab
+    const ns = $('#nt-sap'); if (ns) ns.hidden = !SAPM_ON
     nt.querySelectorAll('.navtab').forEach((b) => b.classList.toggle('on', b.getAttribute('data-tab') === tab))
     $('#view').className = 'view ' + (view === 'login' ? 'login' : 'scroll')
   }
@@ -1712,6 +1731,7 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     SESSION = getSession()
     view = 'main'
     selDate = defSel()
+    if (SAPM_ON) { sapmLoadCache(); sapmFetch(true) }
     render()
     syncEntries()
     toast('ยินดีต้อนรับ ' + name + ' · สาขา' + b.name)
@@ -1727,6 +1747,7 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     const dLabel = (d) => (RET ? (d === 'pending' ? '⏳ รอส่งคืนคลัง (' + myEntries('pending').length + ')' : '✅ ส่งแล้ว ' + d.slice(8, 10) + '/' + d.slice(5, 7)) : d === todayKey() ? 'วันนี้' : d.slice(8, 10) + '/' + d.slice(5, 7))
     setTop(CFG.TITLE, 'สาขา' + SESSION_BRANCH().name + ' · ' + SESSION.user, true, 'main')
     $('#view').innerHTML =
+      sapmBanner() +
       '<div class="stats s3 anim"><div class="stat"><b>' + list.length + '</b><span>รายการ' + (RET ? (selDate === 'pending' ? 'รอส่งคืน' : 'ที่ส่งแล้ว') : isToday ? 'วันนี้' : '') + '</span></div><div class="stat ok"><b>' + fmtNum(total) + '</b><span>' + esc(CFG.TOTAL_LABEL) + '</span></div><div class="stat"><b>' + nCodes + '</b><span>รหัสสินค้า</span></div></div>' +
       '<div class="stack">' +
       '<button type="button" class="act primary" data-act="scan"><span class="ic">📷</span><span class="tx"><b>สแกน QR สินค้า</b><small>เล็งที่ QR แล้วใส่จำนวน' + esc(CFG.SHEET) + '</small></span><span class="chev">›</span></button>' +
@@ -1815,6 +1836,7 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     if (!SESSION) view = 'login'
     if (view === 'login') viewLogin()
     else if (view === 'products') viewProducts()
+    else if (view === 'sap' && SAPM_ON) viewSap()
     else viewMain()
   }
 
@@ -2001,6 +2023,378 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     q.oninput = () => { $('#p-res').innerHTML = prodSearchHtml(q.value) }
   }
 
+  /* =====================================================================
+     ข้อมูลเคลื่อนไหวสินค้าจาก SAP (Transfer / GR / DO / GI / อื่น ๆ)
+     - วาง/อัปโหลดไฟล์ SAP ทุกเช้า → รวม Batch ต่อรหัสต่อเอกสาร → เก็บในชีต (แท็บ SAPเคลื่อนไหว_สาขา)
+     - Transfer เทียบกับรับเข้าในแอป · GI เทียบกับรอบ "ส่งคืนคลัง" ในแอปตีคืน (เป็นรอบ ๆ แบบ FIFO)
+     ===================================================================== */
+  const SAPM_ON = CFG.MODE === 'receive' || CFG.MODE === 'return'
+  const SAPM_TYPES = [['Transfer', '🚚 Transfer — โอนย้ายจากคลังใหญ่เข้าหน้าร้าน', 'in'], ['GR', '📥 GR — รับเข้าคลัง', 'in'], ['DO', '🛒 DO — ขายออก', 'out'], ['GI', '↩️ GI — ตัดสต๊อก ตีคืนของเสียกลับคลัง', 'out'], ['OTHER', '📄 อื่น ๆ (เช่น CN)', 'in']]
+  const sapmType = (t) => (['Transfer', 'GR', 'DO', 'GI'].indexOf(t) >= 0 ? t : 'OTHER')
+  const TOL_TR = 0.05 // Transfer: ต่างไม่เกินกี่แพ็คถือว่าตรง
+  const TOL_GI = 0.4 // GI ตัดเป็นเศษแพ็คได้
+  const GI_WAIT = Number(CFG.GI_WAIT_DAYS) || 14 // คลังอาจทำ GI ช้า — รอได้กี่วันก่อนเตือนแดง
+  const SAPM_KEY = 'br_sapm_cache'
+  let SAPM = { rows: [], at: 0, branchId: '' }
+  let sapDraft = null
+  const r2 = (x) => Math.round(x * 100) / 100
+  const addDays = (k, n) => { const d = new Date(k + 'T00:00:00'); d.setDate(d.getDate() + n); return todayKey(d) }
+  const dShort = (k) => { const p = String(k).split('-'); return p.length === 3 ? Number(p[2]) + '/' + Number(p[1]) + '/' + p[0] : k }
+  function sapmLoadCache() {
+    if (!SESSION) return
+    const c = (lsGet(SAPM_KEY, {}) || {})[SESSION.branchId]
+    SAPM = c && Array.isArray(c.rows) ? { rows: c.rows, at: c.at || 0, branchId: SESSION.branchId } : { rows: [], at: 0, branchId: SESSION.branchId }
+  }
+  function sapmSaveCache() {
+    const all = lsGet(SAPM_KEY, {}) || {}
+    all[SAPM.branchId] = { rows: SAPM.rows, at: SAPM.at }
+    try { lsSet(SAPM_KEY, all) } catch (e) { /* เต็ม — ไม่เป็นไร ดึงจากชีตใหม่ได้ */ }
+  }
+  async function sapApi(action, body) {
+    if (!SYNC_URL) throw new Error('ยังไม่ได้ตั้งค่า SYNC_URL')
+    const res = await fetch(SYNC_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(Object.assign({ action: action, branch: SESSION_BRANCH().name }, body || {})) })
+    const txt = await res.text()
+    let j
+    try { j = JSON.parse(txt) } catch (e) { throw new Error(/<html/i.test(txt) ? 'Apps Script ตอบกลับเป็นหน้าเว็บ — ตรวจการ Deploy' : 'ข้อมูลตอบกลับผิดรูปแบบ') }
+    if (!j.ok) throw new Error(j.message || j.error || 'ไม่สำเร็จ')
+    return j.data || {}
+  }
+  let sapmBusy = false
+  async function sapmFetch(quiet) {
+    if (!SAPM_ON || !SESSION || !SYNC_URL || sapmBusy) return
+    sapmBusy = true
+    try {
+      const d = await sapApi('getSapMoves', { from: todayKey(new Date(Date.now() - 90 * 86400000)) })
+      SAPM = { rows: d.rows || [], at: Date.now(), branchId: SESSION.branchId }
+      sapmSaveCache()
+      if ((view === 'main' || view === 'sap') && !document.querySelector('.modal-ov, .modal-sheet, #pk-ov')) render()
+    } catch (e) { if (!quiet) toast('โหลดข้อมูล SAP ไม่สำเร็จ: ' + e.message, 'err', 4000) }
+    finally { sapmBusy = false }
+  }
+  // ---------- แปลงหน่วย SAP → แพ็คไซต์ในฐานสินค้า ----------
+  function kgPer(p) { const m = /(\d+(?:\.\d+)?)\s*(kg|g)\b/i.exec(p || ''); if (!m) return null; const v = parseFloat(m[1]); return /kg/i.test(m[2]) ? v : v / 1000 }
+  function pcPer(p) { const m = /(\d+)\s*pc/i.exec(p || ''); return m ? Number(m[1]) : null }
+  function toPacks(code, uom, q) {
+    const pd = products[code]
+    if (!pd) return { p: null, why: 'ไม่มีในฐานสินค้า' }
+    const pk = String(pd[1] || '').trim(), u = String(uom || '').trim().toLowerCase(), p = pk.toLowerCase()
+    if (u === p) return { p: q }
+    if (u === 'kg' || u === 'kgs' || u === 'กก.' || u === 'กิโลกรัม') { const k = kgPer(pk); return k ? { p: q / k } : { p: null, why: 'ฐานสินค้าไม่มีน้ำหนักต่อแพ็ค (' + pk + ')' } }
+    if (u === 'g' || u === 'กรัม') { const k = kgPer(pk); return k ? { p: q / 1000 / k } : { p: null, why: 'ฐานสินค้าไม่มีน้ำหนักต่อแพ็ค (' + pk + ')' } }
+    if (['pce', 'pcs', 'pc', 'ea', 'ชิ้น'].indexOf(u) >= 0) { const n = pcPer(pk); return { p: n ? q / n : q } }
+    if (/^pack/.test(u) && /^pack/.test(p)) return { p: q }
+    return { p: null, why: 'หน่วย SAP (' + uom + ') ไม่ตรงกับฐาน (' + pk + ')' }
+  }
+  const qtyOf = (x) => (x.qin || 0) || (x.qout || 0)
+  function packsOf(x) { return toPacks(x.code, x.uom, qtyOf(x)) }
+  // ---------- อ่านไฟล์ / ข้อความที่วางจาก SAP ----------
+  function sapmParse(rows) {
+    rows = rows.map((r) => r.map((c) => String(c == null ? '' : c).replace(/ /g, ' ').trim()))
+    const H = rows.findIndex((r) => r.some((c) => /ประเภทเอกสาร/.test(c)) && r.some((c) => /รหัสสินค้า/.test(c)))
+    let ix = { code: 0, name: 1, date: 3, type: 4, doc: 5, wh: 7, qin: 8, qout: 9, uom: 10 }
+    if (H >= 0) {
+      const h = rows[H], f = (re, def) => { const i = h.findIndex((x) => re.test(x)); return i >= 0 ? i : def }
+      ix = { code: f(/^รหัสสินค้า/, 0), name: f(/^ชื่อสินค้า/, 1), date: f(/วันที่เอกสาร/, 3), type: f(/ประเภทเอกสาร/, 4), doc: f(/เลขที่เอกสาร/, 5), wh: f(/ชื่อคลัง/, 7), qin: f(/จำนวนรับเข้า/, 8), qout: f(/จำนวนตัดออก/, 9), uom: f(/uom|หน่วย/i, 10) }
+    }
+    const body = (H >= 0 ? rows.slice(H + 1) : rows).filter((r) => /^[A-Z]{1,4}\d{3,}/i.test(r[ix.code] || ''))
+    // วันที่แบบ ว/ด/ป หรือ ด/ว/ป → ดูจากข้อมูลทั้งชุด
+    let dmy = true
+    body.forEach((r) => { const m = /^(\d{1,2})[\/.\-](\d{1,2})[\/.\-]\d{2,4}/.exec(r[ix.date] || ''); if (m && Number(m[2]) > 12) dmy = false })
+    const pd2 = (n) => (n < 10 ? '0' : '') + Number(n)
+    const fix = (y, m, d) => { y = Number(y); if (y < 100) y += 2000; if (y > 2400) y -= 543; return m >= 1 && m <= 12 && d >= 1 && d <= 31 ? y + '-' + pd2(m) + '-' + pd2(d) : '' }
+    const pdate = (s) => {
+      if (/^\d{4,5}(\.\d+)?$/.test(s)) { const n = Math.floor(Number(s)); if (n > 20000 && n < 80000) return new Date(Date.UTC(1899, 11, 30) + n * 86400000).toISOString().slice(0, 10) }
+      let m = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(s)
+      if (m) return fix(m[1], +m[2], +m[3])
+      m = /^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})/.exec(s)
+      if (m) return dmy ? fix(m[3], +m[2], +m[1]) : fix(m[3], +m[1], +m[2])
+      return ''
+    }
+    const num = (v) => Number(String(v || '').replace(/,/g, '')) || 0
+    const agg = new Map(), whs = new Set()
+    let bad = 0
+    body.forEach((r) => {
+      const code = r[ix.code].toUpperCase(), date = pdate(r[ix.date]), type = sapmType(r[ix.type]) === 'OTHER' ? (r[ix.type] || 'อื่น ๆ') : r[ix.type]
+      if (!date) { bad++; return }
+      if (r[ix.wh]) whs.add(r[ix.wh])
+      const doc = String(r[ix.doc] || '').replace(/\.0+$/, '')
+      const k = type + '|' + date + '|' + doc + '|' + code
+      const x = agg.get(k) || { type: type, date: date, doc: doc, code: code, name: r[ix.name].replace(/\s+/g, ' '), qin: 0, qout: 0, uom: r[ix.uom], lines: 0 }
+      x.qin = Math.round((x.qin + num(r[ix.qin])) * 1000) / 1000
+      x.qout = Math.round((x.qout + num(r[ix.qout])) * 1000) / 1000
+      x.lines++
+      agg.set(k, x)
+    })
+    const list = Array.from(agg.values())
+    const dates = list.map((x) => x.date).sort()
+    return { rows: list, lines: body.length, bad: bad, whs: Array.from(whs), from: dates[0] || '', to: dates[dates.length - 1] || '' }
+  }
+  // ---------- Transfer ↔ รับเข้า ----------
+  function trDocsFor(day) {
+    const tr = SAPM.rows.filter((x) => x.type === 'Transfer')
+    let use = tr.filter((x) => x.date === day)
+    if (!use.length) use = tr.filter((x) => x.date === addDays(day, -1)) // โอนตอนเที่ยงคืน ลงวันที่ก่อนหน้า
+    return use
+  }
+  function trRecon(day) {
+    const use = trDocsFor(day)
+    if (!use.length) return null
+    const m = new Map()
+    use.forEach((x) => {
+      const c = m.get(x.code) || { code: x.code, name: x.name, uom: x.uom, qty: 0, packs: 0, why: '', docs: new Set() }
+      const pk = packsOf(x)
+      c.qty = Math.round((c.qty + qtyOf(x)) * 1000) / 1000
+      if (pk.p == null) { c.packs = null; c.why = pk.why } else if (c.packs != null) c.packs += pk.p
+      c.docs.add(x.doc); m.set(x.code, c)
+    })
+    const recv = new Map()
+    entries.filter((e) => SESSION && e.branchId === SESSION.branchId && e.date === day && CFG.MODE === 'receive').forEach((e) => recv.set(e.code, Math.round(((recv.get(e.code) || 0) + e.qty) * 1000) / 1000))
+    const gr = new Set(SAPM.rows.filter((x) => x.type === 'GR' && (x.date === day || x.date === addDays(day, -1))).map((x) => x.code))
+    recv.forEach((q, c) => { if (!m.has(c)) m.set(c, { code: c, name: (products[c] || [''])[0], uom: '', qty: null, packs: null, why: '', docs: new Set(), only: true }) })
+    const rows = Array.from(m.values()).sort((a, b) => (a.code < b.code ? -1 : 1)).map((x) => {
+      const r = recv.get(x.code) || 0
+      let st, txt
+      if (x.only) { st = gr.has(x.code) ? 'info' : 'warn'; txt = gr.has(x.code) ? 'ℹ️ มีใน GR (รับเข้าคลัง)' : '＋ รับแต่ไม่มีในใบโอน' }
+      else if (!r) { st = 'bad'; txt = '✖ ยังไม่ได้บันทึกรับ' }
+      else if (x.packs == null) { st = 'warn'; txt = '? แปลงหน่วยไม่ได้ — ' + x.why }
+      else { const d = r2(r - x.packs); st = Math.abs(d) <= TOL_TR ? 'ok' : 'bad'; txt = st === 'ok' ? '✔ ตรง' : d < 0 ? '▼ ขาด ' + fmtNum(-d) : '▲ เกิน ' + fmtNum(d) }
+      return Object.assign(x, { recv: r, st: st, txt: txt, packs: x.packs == null ? null : r2(x.packs) })
+    })
+    const docs = Array.from(new Set(use.map((x) => x.doc)))
+    return { day: day, docDate: use[0].date, docs: docs, rows: rows, nRecv: recv.size, bad: rows.filter((r) => r.st === 'bad' || r.st === 'warn').length }
+  }
+  function printTransfer(day0) {
+    const days = Array.from(new Set(SAPM.rows.filter((x) => x.type === 'Transfer').map((x) => x.date))).sort().reverse()
+    const opts = []
+    const today = todayKey()
+    if (trDocsFor(today).length) opts.push([today, 'รับของวันนี้ ' + dShort(today)])
+    days.forEach((d) => { if (!opts.some((o) => o[0] === d)) opts.push([d, 'ใบโอนวันที่ ' + dShort(d)]) })
+    if (!opts.length) { toast('ยังไม่มีข้อมูล Transfer — วางข้อมูล SAP ก่อน', 'err', 3500); return }
+    window.PrintKit.open({
+      name: 'ใบตรวจรับของโอนย้าย', options: opts, value: day0 || opts[0][0],
+      build: (day) => {
+        const R = trRecon(day)
+        const ok = R.rows.filter((r) => r.st === 'ok').length
+        let n = 0
+        return {
+          kicker: 'TRANSFER RECEIVING CHECK', title: 'ใบตรวจรับของโอนย้ายจากคลังใหญ่', sub: 'สาขา' + SESSION_BRANCH().name + ' · เทียบ SAP Transfer กับที่นับรับเข้าในแอป วันที่ ' + dShort(day),
+          meta: [['วันที่ใบโอน (SAP)', dShort(R.docDate)], ['เลขที่โอนย้าย', R.docs.join(', ')], ['รับเข้าในแอป วันที่ ' + dShort(day), R.nRecv + ' รหัส'], ['ผลกระทบยอด', 'ตรง ' + ok + ' · ไม่ตรง ' + R.bad]],
+          cols: [{ h: 'ลำดับ', cls: 'c', w: '5%' }, { h: 'รหัสสินค้า', cls: 'code', w: '10%' }, { h: 'ชื่อสินค้า' }, { h: 'แพ็คไซต์', w: '10%' }, { h: 'SAP (หน่วยเดิม)', cls: 'n', w: '10%' }, { h: 'SAP (แพ็ค)', cls: 'n', w: '8%' }, { h: 'รับจริง (แอป)', cls: 'n', w: '9%' }, { h: 'ผล', w: '17%' }],
+          rows: [{ sec: R.bad ? '⚠️ ไม่ตรง ' + R.bad + ' รายการ — ตรวจสอบกับคลังใหญ่ / ขนส่งก่อนเซ็นรับ' : '✔ รับครบตรงกับ SAP ทุกรายการ' }].concat(R.rows.map((r) => ({ hl: r.st !== 'ok', cells: [++n, r.code, r.name || '(ไม่มีในฐานสินค้า)', (products[r.code] || ['', ''])[1], r.only ? '-' : fmtNum(r.qty) + ' ' + r.uom, r.only || r.packs == null ? '-' : fmtNum(r.packs), r.recv ? fmtNum(r.recv) : '0', r.txt] }))),
+          summary: '✔ ตรง = ต่างไม่เกิน ' + TOL_TR + ' แพ็ค · ▼ ขาด = รับน้อยกว่า SAP · ▲ เกิน = รับมากกว่า SAP · ✖ มีในใบโอนแต่ยังไม่ได้บันทึกรับ · ＋ บันทึกรับแต่ไม่มีในใบโอน · SAP (แพ็ค) = รวมทุก Batch ÷ แพ็คไซต์ในฐานสินค้า',
+          noteBox: 'หมายเหตุ:', sign: ['ผู้ตรวจรับ (สาขา)', 'ผู้ส่งของ / ขนส่ง', 'ผู้จัดการสาขา'], empty: 'ไม่มีรายการ', footRight: 'แอป' + CFG.TITLE + ' · ข้อมูล SAP'
+        }
+      }
+    })
+  }
+  // ---------- GI ↔ ตีคืน (เทียบเป็นรอบ: รอบเก่าใช้ GI ก่อน) ----------
+  function giRecon(rets, todayOverride) {
+    const today = todayOverride || todayKey()
+    const minSap = SAPM.rows.map((x) => x.date).sort()[0] || ''
+    const gis = new Map() // code -> [{date, doc, rem, p}]
+    SAPM.rows.filter((x) => x.type === 'GI').sort((a, b) => a.date.localeCompare(b.date)).forEach((x) => {
+      const pk = packsOf(x)
+      const l = gis.get(x.code) || []
+      l.push({ date: x.date, doc: x.doc, p: pk.p, rem: pk.p == null ? qtyOf(x) : pk.p, raw: qtyOf(x) + ' ' + x.uom, why: pk.why || '', name: x.name })
+      gis.set(x.code, l)
+    })
+    const rmap = new Map() // sent -> code -> qty
+    rets.filter((e) => e.sent).forEach((e) => {
+      const m = rmap.get(e.sent) || new Map()
+      m.set(e.code, Math.round(((m.get(e.code) || 0) + e.qty) * 1000) / 1000)
+      rmap.set(e.sent, m)
+    })
+    const rounds = Array.from(rmap.keys()).sort().map((S) => {
+      const items = Array.from(rmap.get(S).entries()).sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([code, need]) => {
+        if (!minSap || S < addDays(minSap, -3)) return { code: code, need: need, got: 0, docs: [], st: 'nodata', txt: '— ไม่มีข้อมูล SAP ช่วงนั้น' }
+        let got = 0
+        const docs = []
+        ;(gis.get(code) || []).forEach((g) => {
+          if (need - got <= TOL_GI || g.rem <= 0.001 || g.date < addDays(S, -3)) return
+          const t = Math.min(g.rem, need - got)
+          g.rem = Math.round((g.rem - t) * 1000) / 1000; got = Math.round((got + t) * 1000) / 1000
+          if (docs.indexOf(g.doc) < 0) docs.push(g.doc)
+        })
+        return { code: code, need: need, got: r2(got), docs: docs }
+      })
+      // คลังอาจทำ GI ช้า: ขาดอยู่แต่ส่งคืนมาไม่เกิน GI_WAIT วัน = รอ (เหลือง) · เกินนั้น = ไม่ตรง (แดง)
+      const age = dayDiff(S, today)
+      items.forEach((i) => {
+        if (i.st) return
+        const diff = r2(i.got - i.need)
+        i.st = Math.abs(diff) <= TOL_GI ? 'ok' : diff < 0 && age <= GI_WAIT ? 'wait' : 'bad'
+        i.txt = i.st === 'ok' ? '✔ ตรง'
+          : i.st === 'wait' ? (i.got ? '⏳ GI ยังไม่ครบ ขาด ' + fmtNum(-diff) : '⏳ รอคลังทำ GI') + ' (รอมา ' + age + ' วัน)'
+          : diff > 0 ? '▲ GI มากกว่าที่ตีคืน ' + fmtNum(diff)
+          : (i.got ? '▼ GI น้อยกว่าที่ตีคืน ' + fmtNum(-diff) : '✖ ไม่มี GI') + ' (เกิน ' + GI_WAIT + ' วัน)'
+      })
+      const nb = items.filter((i) => i.st === 'bad').length, nw = items.filter((i) => i.st === 'wait').length
+      return { sent: S, age: dayDiff(S, today), items: items, bad: nb, wait: nw, nodata: items.every((i) => i.st === 'nodata') }
+    })
+    const extra = []
+    gis.forEach((l, code) => l.forEach((g) => { if (g.rem > TOL_GI) extra.push({ code: code, name: g.name, date: g.date, doc: g.doc, left: r2(g.rem), raw: g.raw, why: g.why }) }))
+    extra.sort((a, b) => b.date.localeCompare(a.date) || (a.code < b.code ? -1 : 1))
+    return { rounds: rounds.reverse(), extra: extra, bad: rounds.reduce((a, r) => a + r.bad, 0), wait: rounds.reduce((a, r) => a + r.wait, 0) }
+  }
+  function dayDiff(a, b) { return Math.round((Date.parse(b + 'T00:00:00') - Date.parse(a + 'T00:00:00')) / 86400000) }
+  async function loadRets() {
+    if (CFG.MODE === 'return') return entries.filter((e) => SESSION && e.branchId === SESSION.branchId)
+    const d = await sapApi('getReturns', { from: todayKey(new Date(Date.now() - 90 * 86400000)) })
+    return d.items || []
+  }
+  let giCache = null
+  async function printGi() {
+    if (!SAPM.rows.some((x) => x.type === 'GI')) toast('ยังไม่มี GI ในข้อมูล SAP — จะแสดงเฉพาะรอบตีคืน', 'ok', 3000)
+    let rets
+    try { rets = await loadRets() } catch (e) { toast('ดึงข้อมูลตีคืนไม่สำเร็จ: ' + e.message, 'err', 4000); return }
+    const G = giRecon(rets)
+    giCache = G
+    window.PrintKit.open({
+      name: 'ใบกระทบ GI กับการตีคืน', options: [['bad', 'เฉพาะที่ไม่ตรง / รอ GI'], ['all', 'ทุกรอบ ทุกรายการ']],
+      build: (opt) => {
+        const rows = []
+        let n = 0
+        const nm = (c) => (products[c] || [''])[0]
+        G.rounds.forEach((R) => {
+          const its = opt === 'all' ? R.items : R.items.filter((i) => i.st === 'bad' || i.st === 'wait')
+          if (!its.length) return
+          rows.push({ sec: '↩️ รอบส่งคืนคลัง ' + dShort(R.sent) + ' — ' + (R.nodata ? 'ไม่มีข้อมูล SAP ช่วงนั้น' : R.bad ? '⚠️ ไม่ตรง ' + R.bad + ' รายการ' : R.wait ? '⏳ รอคลังทำ GI ' + R.wait + ' รายการ (ส่งคืนมา ' + R.age + ' วัน · รอได้ถึง ' + GI_WAIT + ' วัน)' : '✔ ครบ') })
+          its.forEach((i) => rows.push({ hl: i.st === 'bad', cells: [++n, i.code, nm(i.code) || '(ไม่มีในฐานสินค้า)', (products[i.code] || ['', ''])[1], fmtNum(i.need), i.st === 'nodata' ? '-' : fmtNum(i.got), i.docs.join(', '), i.txt] }))
+        })
+        if (G.extra.length) {
+          rows.push({ sec: '⚠️ GI ใน SAP ที่ไม่มีในแอปตีคืน (' + G.extra.length + ' รายการ) — ตัดสต๊อกแต่ไม่ได้บันทึกตีคืน หรือคลังตัดผิด' })
+          G.extra.forEach((x) => rows.push({ hl: true, cells: [++n, x.code, x.name || nm(x.code), (products[x.code] || ['', ''])[1], '0', fmtNum(x.left) + (x.why ? ' (' + x.raw + ')' : ''), x.doc + ' · ' + dShort(x.date), '＋ GI เกิน / ไม่มีในแอป'] }))
+        }
+        const giDates = SAPM.rows.filter((x) => x.type === 'GI').map((x) => x.date).sort()
+        return {
+          kicker: 'GOODS ISSUE vs RETURN', title: 'ใบกระทบยอดตัดสต๊อก (GI) กับการตีคืน', sub: 'สาขา' + SESSION_BRANCH().name + ' · เทียบ GI ใน SAP กับรอบ "ส่งคืนคลัง" ในแอปตีคืน (รอบเก่าจับคู่ GI ก่อน)',
+          meta: [['ข้อมูล GI ใน SAP', giDates.length ? dShort(giDates[0]) + ' – ' + dShort(giDates[giDates.length - 1]) : 'ยังไม่มี'], ['รอบตีคืน (90 วัน)', G.rounds.length + ' รอบ'], ['ไม่ตรง / รอ GI', G.bad + ' / ' + G.wait + ' รายการ'], ['GI ที่ไม่มีในแอป', G.extra.length + ' รายการ']],
+          cols: [{ h: 'ลำดับ', cls: 'c', w: '5%' }, { h: 'รหัสสินค้า', cls: 'code', w: '10%' }, { h: 'ชื่อสินค้า' }, { h: 'แพ็คไซต์', w: '10%' }, { h: 'ตีคืน (แอป)', cls: 'n', w: '8%' }, { h: 'GI (แพ็ค)', cls: 'n', w: '8%' }, { h: 'เลขที่ GI', w: '13%' }, { h: 'ผล', w: '17%' }],
+          rows: rows,
+          summary: '✔ ตรง = ต่างไม่เกิน ' + TOL_GI + ' แพ็ค (GI ตัดเป็นเศษแพ็คได้) · ⏳ รอคลังทำ GI = ส่งคืนมาไม่เกิน ' + GI_WAIT + ' วัน ยังไม่ถือว่าผิด (คลังอาจทำ GI ช้า) · เกิน ' + GI_WAIT + ' วันแล้วยังไม่มี GI = ⚠️ ไม่ตรง · GI ที่ลงวันที่ก่อนวันส่งคืนเกิน 3 วันจะไม่ถูกจับคู่',
+          noteBox: 'หมายเหตุ:', sign: ['ผู้ทำรายการตีคืน', 'ผู้ตรวจสอบ (คลัง)', 'ผู้จัดการสาขา'], empty: 'ทุกรอบตรงกับ GI แล้ว ✔', footRight: 'แอป' + CFG.TITLE + ' · ข้อมูล SAP'
+        }
+      }
+    })
+  }
+  // ---------- สรุปแยกประเภท ----------
+  function printSapTypes() {
+    if (!SAPM.rows.length) { toast('ยังไม่มีข้อมูล SAP', 'err'); return }
+    const last = SAPM.rows.map((x) => x.date).sort().pop()
+    const opts = [['all|2', 'ทุกประเภท · 2 วันล่าสุด'], ['all|7', 'ทุกประเภท · 7 วันล่าสุด']].concat(SAPM_TYPES.map((t) => [t[0] + '|7', t[1].split(' — ')[0] + ' ' + t[0] + ' · 7 วันล่าสุด']))
+    window.PrintKit.open({
+      name: 'สรุปความเคลื่อนไหวสินค้า SAP', options: opts,
+      build: (opt) => {
+        const [sel, nd] = opt.split('|')
+        const from = addDays(last, -(Number(nd) - 1))
+        const rows = []
+        let n = 0, cnt = 0
+        SAPM_TYPES.filter((t) => sel === 'all' || sel === t[0]).forEach((t) => {
+          const m = new Map()
+          SAPM.rows.filter((x) => sapmType(x.type) === t[0] && x.date >= from && x.date <= last).forEach((x) => {
+            const c = m.get(x.code) || { code: x.code, name: x.name, uom: x.uom, qty: 0, packs: 0, docs: new Set(), days: new Set(), types: new Set() }
+            const pk = packsOf(x)
+            c.qty = Math.round((c.qty + qtyOf(x)) * 1000) / 1000
+            if (pk.p == null) c.packs = null; else if (c.packs != null) c.packs += pk.p
+            c.docs.add(x.doc); c.days.add(Number(x.date.slice(8))); c.types.add(x.type); m.set(x.code, c)
+          })
+          const list = Array.from(m.values()).sort((a, b) => (a.code < b.code ? -1 : 1))
+          if (!list.length) return
+          cnt += list.length
+          const tp = list.reduce((a, x) => a + (x.packs || 0), 0)
+          rows.push({ sec: t[1] + ' · ' + list.length + ' รหัส · รวม ' + fmtNum(r2(tp)) + ' แพ็ค' + (t[0] === 'OTHER' ? ' (' + Array.from(new Set(list.flatMap((x) => Array.from(x.types)))).join(', ') + ')' : '') })
+          list.forEach((x) => rows.push({ hl: x.packs == null, cells: [++n, x.code, x.name, (products[x.code] || ['', ''])[1] || '-', fmtNum(x.qty) + ' ' + x.uom, x.packs == null ? '-' : (t[2] === 'out' ? '−' : '+') + fmtNum(r2(x.packs)), x.docs.size, Array.from(x.days).sort((a, b) => a - b).join(', ')] }))
+        })
+        const nBad = new Set(SAPM.rows.filter((x) => x.date >= from && packsOf(x).p == null).map((x) => x.code)).size
+        return {
+          kicker: 'SAP STOCK MOVEMENT', title: 'สรุปความเคลื่อนไหวสินค้าแยกประเภท', sub: 'สาขา' + SESSION_BRANCH().name + ' · แปลงจำนวนเป็นแพ็คตามฐานสินค้า (รวมทุก Batch แล้ว)',
+          meta: [['ช่วงวันที่', dShort(from) + ' – ' + dShort(last)], ['ประเภท', sel === 'all' ? 'ทุกประเภท' : sel], ['รายการ', cnt + ' รหัส'], ['แปลงหน่วยไม่ได้', nBad + ' รหัส']],
+          cols: [{ h: 'ลำดับ', cls: 'c', w: '5%' }, { h: 'รหัสสินค้า', cls: 'code', w: '10%' }, { h: 'ชื่อสินค้า' }, { h: 'แพ็คไซต์', w: '10%' }, { h: 'SAP (หน่วยเดิม)', cls: 'n', w: '11%' }, { h: 'แพ็ค', cls: 'n', w: '8%' }, { h: 'เอกสาร', cls: 'c', w: '7%' }, { h: 'วันที่', w: '9%' }],
+          rows: rows,
+          summary: 'แถวไฮไลต์ = แปลงเป็นแพ็คไม่ได้ (รหัสยังไม่มีในฐานสินค้า หรือแพ็คไซต์ไม่มีน้ำหนัก) — เพิ่ม/แก้ในแท็บ ฐานสินค้า แล้วจะแปลงได้เอง',
+          noteBox: 'หมายเหตุ:', sign: ['ผู้จัดทำ', 'ผู้ตรวจสอบ', 'ผู้จัดการสาขา'], empty: 'ไม่มีข้อมูลในช่วงนี้', footRight: 'แอป' + CFG.TITLE + ' · ข้อมูล SAP'
+        }
+      }
+    })
+  }
+  // ---------- แถบแจ้งเตือนหน้าแรก ----------
+  function sapmBanner() {
+    if (!SAPM_ON || !SAPM.rows.length || CFG.EXPIRY) return ''
+    let h = ''
+    if (CFG.MODE === 'receive') {
+      const R = trRecon(todayKey())
+      if (R && R.nRecv) h += '<button type="button" class="sap-ban ' + (R.bad ? 'bad' : 'ok') + '" data-act="sap-tr">' + (R.bad ? '⚠️ รับของวันนี้ไม่ตรงกับใบโอน SAP <b>' + R.bad + ' รายการ</b> — แตะเพื่อดู / พิมพ์' : '✔ รับของวันนี้ตรงกับใบโอน SAP ครบ ' + R.rows.length + ' รายการ') + '</button>'
+      else if (R) h += '<button type="button" class="sap-ban info" data-act="sap-tr">🚚 มีใบโอนจากคลัง ' + R.docs.join(', ') + ' (' + R.rows.length + ' รหัส) — นับรับแล้วแตะเพื่อตรวจ</button>'
+    }
+    if (CFG.MODE === 'return') {
+      const G = giRecon(entries.filter((e) => SESSION && e.branchId === SESSION.branchId))
+      if (G.bad || G.extra.length) h += '<button type="button" class="sap-ban bad" data-act="sap-gi">⚠️ GI ใน SAP ไม่ตรงกับการตีคืน <b>' + (G.bad + G.extra.length) + ' รายการ</b> — แตะเพื่อดู</button>'
+      else if (G.wait) { const old = Math.max.apply(null, G.rounds.filter((r) => r.wait).map((r) => r.age)); h += '<button type="button" class="sap-ban info" data-act="sap-gi">⏳ รอคลังทำ GI ' + G.wait + ' รายการ (นานสุด ' + old + ' วัน · เตือนเมื่อเกิน ' + GI_WAIT + ' วัน)</button>' }
+    }
+    return h
+  }
+  // ---------- หน้า 📋 SAP ----------
+  function viewSap() {
+    setTop('ข้อมูล SAP', 'สาขา' + SESSION_BRANCH().name + ' · ' + SESSION.user, true, 'sap')
+    $('#dock').hidden = true
+    const rows = SAPM.rows
+    const ds = rows.map((x) => x.date).sort()
+    const cnt = {}
+    rows.forEach((x) => { const t = sapmType(x.type); cnt[t] = (cnt[t] || 0) + 1 })
+    const lastAt = rows.map((x) => x.at || '').sort().pop()
+    $('#view').innerHTML =
+      sapmBanner() +
+      '<div class="card"><h2>📊 ข้อมูล SAP ในชีต</h2>' +
+      (rows.length ? '<p class="sap-sum">' + rows.length + ' รายการ · วันที่ ' + dShort(ds[0]) + ' – ' + dShort(ds[ds.length - 1]) + (lastAt ? ' · วางล่าสุด ' + esc(lastAt) : '') + '</p><div class="sap-chips">' + SAPM_TYPES.filter((t) => cnt[t[0]]).map((t) => '<span>' + esc(t[0] === 'OTHER' ? 'อื่น ๆ' : t[0]) + ' <b>' + cnt[t[0]] + '</b></span>').join('') + '</div>' : '<p class="sap-sum">ยังไม่มีข้อมูล — วางข้อมูลจาก SAP ด้านล่าง</p>') +
+      '<div class="sap-acts">' +
+      (CFG.MODE === 'receive' ? '<button type="button" class="btn btn-primary btn-block" data-act="sap-tr">🚚 ① ตรวจรับของโอนย้าย (Transfer)</button>' : '') +
+      '<button type="button" class="btn btn-secondary btn-block" data-act="sap-gi">↩️ ② กระทบ GI กับการตีคืน</button>' +
+      '<button type="button" class="btn btn-secondary btn-block" data-act="sap-ty">📊 ③ สรุปแยกประเภท (DO / Transfer / GR / GI)</button>' +
+      '<button type="button" class="btn btn-ghost btn-block" data-act="sap-reload">🔄 โหลดข้อมูลล่าสุดจากชีต</button></div></div>' +
+      '<div class="card"><h3>📋 วางข้อมูลจาก SAP</h3><p style="margin:0 0 10px;color:var(--muted);font-size:14px">ไฟล์ Excel จาก SAP (คอลัมน์ รหัสสินค้า · ชื่อสินค้า · วันที่เอกสาร · ประเภทเอกสาร · เลขที่เอกสาร · จำนวนรับเข้า · จำนวนตัดออก · Inventory UoM) — วางช่วงวันที่ซ้ำได้ ระบบแทนที่ข้อมูลเดิมให้ ไม่ซ้ำ</p>' +
+      '<input id="sap-file" type="file" accept=".xlsx,.csv,.txt,.tsv" style="width:100%;margin-bottom:10px">' +
+      '<label class="field"><span>หรือคัดลอกทั้งตารางจาก Excel มาวางที่นี่ (รวมแถวหัวตาราง)</span><textarea id="sap-paste" rows="3" placeholder="รหัสสินค้า[Tab]ชื่อสินค้า[Tab]…"></textarea></label>' +
+      '<button type="button" class="btn btn-secondary btn-block" data-act="sap-read">อ่านข้อมูลที่วาง</button><div id="sap-preview" style="margin-top:12px"></div></div>'
+    const f = $('#sap-file')
+    f.onchange = async () => {
+      if (!f.files[0]) return
+      $('#sap-preview').textContent = 'กำลังอ่านไฟล์…'
+      try { sapShowDraft(sapmParse(await readFile(f.files[0]))) } catch (e) { $('#sap-preview').innerHTML = '<div class="err">' + esc(e.message) + '</div>' }
+    }
+  }
+  function sapShowDraft(d) {
+    sapDraft = d
+    const box = $('#sap-preview')
+    if (!box) return
+    if (!d.rows.length) { box.innerHTML = '<div class="err">ไม่พบข้อมูล — ต้องมีคอลัมน์ รหัสสินค้า / วันที่เอกสาร / ประเภทเอกสาร (คัดลอกรวมแถวหัวตาราง)</div>'; return }
+    const cnt = {}
+    d.rows.forEach((x) => { cnt[x.type] = (cnt[x.type] || 0) + 1 })
+    const noConv = Array.from(new Set(d.rows.filter((x) => packsOf(x).p == null).map((x) => x.code)))
+    const bn = SESSION_BRANCH().name
+    const whWarn = d.whs.length && !d.whs.some((w) => w.indexOf(bn) >= 0 || w.replace(/\s/g, '').indexOf(bn.replace(/\s/g, '')) >= 0)
+    box.innerHTML =
+      '<div class="sap-prev"><b>อ่านได้ ' + d.lines + ' บรรทัด → รวม Batch แล้ว ' + d.rows.length + ' รายการ</b><br>วันที่ ' + dShort(d.from) + ' – ' + dShort(d.to) + '<br>' +
+      Object.keys(cnt).map((k) => esc(k) + ' ' + cnt[k]).join(' · ') +
+      (d.whs.length ? '<br>คลัง: ' + esc(d.whs.join(', ')) : '') + '</div>' +
+      (whWarn ? '<div class="err">⚠️ ชื่อคลังในไฟล์ไม่ตรงกับสาขา' + esc(bn) + ' — ตรวจว่าดึงข้อมูลถูกสาขา</div>' : '') +
+      (noConv.length ? '<div class="sap-warn">แปลงเป็นแพ็คไม่ได้ ' + noConv.length + ' รหัส: ' + esc(noConv.slice(0, 8).join(', ')) + (noConv.length > 8 ? ' …' : '') + ' (ยังไม่มีในฐานสินค้า — บันทึกได้ เพิ่มในฐานภายหลังแล้วจะแปลงเอง)</div>' : '') +
+      (d.bad ? '<div class="sap-warn">ข้าม ' + d.bad + ' บรรทัดที่อ่านวันที่ไม่ได้</div>' : '') +
+      '<button type="button" class="btn btn-primary btn-block" data-act="sap-save" style="margin-top:10px">☁️ บันทึกลงชีต (' + d.rows.length + ' รายการ)</button>'
+  }
+  async function sapSave() {
+    if (!sapDraft || !sapDraft.rows.length) return
+    const btn = document.querySelector('[data-act=sap-save]')
+    if (btn) { btn.disabled = true; btn.textContent = 'กำลังบันทึก…' }
+    try {
+      const r = await sapApi('saveSapMoves', { by: SESSION.user, rows: sapDraft.rows })
+      toast('บันทึกแล้ว: ใหม่ ' + r.added + ' · แทนที่ ' + r.updated + ' รายการ')
+      sapDraft = null
+      await sapmFetch(true)
+      view = 'sap'; render()
+      if (CFG.MODE === 'receive' && trDocsFor(todayKey()).length) setTimeout(() => toast('🚚 มีใบโอนของวันนี้ — นับรับเสร็จแล้วกด ① ตรวจรับของโอนย้าย', 'ok', 4500), 1600)
+    } catch (e) { toast('บันทึกไม่สำเร็จ: ' + e.message, 'err', 4500); if (btn) { btn.disabled = false; btn.textContent = '☁️ ลองบันทึกอีกครั้ง' } }
+  }
+
   /* ---------- Events ---------- */
   document.addEventListener('click', async (ev) => {
     const el = ev.target.closest('[data-act]')
@@ -2018,6 +2412,13 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     else if (act === 'code') openCodeModal()
     else if (act === 'pick-date') { selDate = el.getAttribute('data-d'); render() }
     else if (act === 'products') { view = 'products'; render() }
+    else if (act === 'sapm') { view = 'sap'; render(); sapmFetch(true) }
+    else if (act === 'sap-read') { const t = $('#sap-paste').value; if (!t.trim()) { toast('ยังไม่ได้วางข้อมูล', 'err'); return } sapShowDraft(sapmParse(parseDelimited(t))) }
+    else if (act === 'sap-save') sapSave()
+    else if (act === 'sap-reload') { await sapmFetch(false); toast('โหลดข้อมูล SAP ล่าสุดแล้ว') }
+    else if (act === 'sap-tr') printTransfer()
+    else if (act === 'sap-gi') printGi()
+    else if (act === 'sap-ty') printSapTypes()
     else if (act === 'p-read') readPasted()
     else if (act === 'p-save') saveDraft()
     else if (act === 'p-add') addOne()
@@ -2079,13 +2480,14 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
   saveEntries()
   saveSys()
   if (getSession()) { view = 'main'; SESSION = getSession() } // เปิดใหม่/รีเฟรชแล้วยังล็อกอินอยู่ ไม่ต้องล็อกอินซ้ำ
+  if (SAPM_ON && SESSION) { sapmLoadCache(); setTimeout(() => sapmFetch(true), 1500) }
   render()
   syncEntries()
   setInterval(() => { if (!document.hidden && SESSION) syncEntries() }, 20000)
   document.addEventListener('visibilitychange', () => { if (!document.hidden) syncEntries(); else flushBeacon() })
   window.addEventListener('pagehide', flushBeacon)
   window.addEventListener('online', () => syncEntries())
-  if (window.__RC_TEST) window.__RC = { entries: () => entries, products: () => products, matchCodes: matchCodes, printEntries: printEntries, openStoreSummary: openStoreSummary, daysLeft: daysLeft, moveToReturn: moveToReturn, openQuickQty: openQuickQty, syncEntries: syncEntries, SYS: () => SYS, SRV: () => SRV, PEND: () => PEND, SY: SY, resolveCode: resolveCode, openCodeModal: openCodeModal, buildXlsx: buildXlsx, readXlsx: readXlsx, parseDelimited: parseDelimited, rowsToProducts: rowsToProducts }
+  if (window.__RC_TEST) window.__RC = { entries: () => entries, products: () => products, matchCodes: matchCodes, printEntries: printEntries, openStoreSummary: openStoreSummary, daysLeft: daysLeft, moveToReturn: moveToReturn, openQuickQty: openQuickQty, syncEntries: syncEntries, SYS: () => SYS, SRV: () => SRV, PEND: () => PEND, SY: SY, resolveCode: resolveCode, openCodeModal: openCodeModal, buildXlsx: buildXlsx, readXlsx: readXlsx, parseDelimited: parseDelimited, rowsToProducts: rowsToProducts, sapmParse: sapmParse, toPacks: toPacks, trRecon: trRecon, giRecon: giRecon, SAPM: () => SAPM, sapmFetch: sapmFetch, readFile: readFile }
 })()
 
 </script>
