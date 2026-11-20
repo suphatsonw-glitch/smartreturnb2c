@@ -418,6 +418,15 @@ input[type='file'] { padding: 8px; font-size: 14px; }
 .qk-reason:active { transform: scale(0.97); background: var(--green-m); }
 .tb-home{flex:none;width:40px;height:40px;border:1px solid rgba(255,255,255,.25);border-radius:11px;background:rgba(255,255,255,.12);color:#fff;font-size:19px;display:grid;place-items:center;text-decoration:none;transition:background .15s,transform .1s}.tb-home:active{background:rgba(255,255,255,.3);transform:scale(.94)}@media(max-width:380px){.topbar .tb-logo{display:none}}
 .login-home{position:absolute;left:12px;top:calc(12px + env(safe-area-inset-top,0px));z-index:2;display:flex;align-items:center;gap:6px;height:40px;padding:0 14px 0 10px;border-radius:99px;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.3);color:#fff;font:700 15px Sarabun,sans-serif;text-decoration:none}.login-home:active{background:rgba(255,255,255,.3)}
+
+/* ---------- ซิงก์ / ล้างข้อมูล ---------- */
+.sync-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--muted); font-weight: 600; margin: 12px 2px 0; }
+.sync-line:empty { display: none; }
+.sync-line.err { color: #8a2a20; background: var(--red-l); border: 1px solid #f0b9b2; border-radius: 10px; padding: 6px 10px; }
+.sync-line button, .sec-row button { font: inherit; font-weight: 700; background: none; border: 0; padding: 4px 0; color: var(--green, #1a7a3c); text-decoration: underline; cursor: pointer; min-height: 32px; }
+.sec-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 18px 2px 8px; }
+.sec-row .sec { margin: 0; }
+.sec-row .clr { color: var(--red); font-size: 14px; }
 </style>
 <style>
 /* ---------- ใบพิมพ์ (PrintKit) ---------- */
@@ -563,8 +572,10 @@ window.PrintKit = (function () {
 <body data-mode="login">
 <script>
 /* ตั้งค่า — BRANCHES: name = ชื่อสาขา / pin = รหัสยืนยัน 4 หลัก
-   แอปนี้ไม่ซิงก์กับ Google Sheet แล้ว ข้อมูลเก็บในเครื่อง และส่งออกเป็นไฟล์ Excel */
+   SYNC_URL = URL ของ Apps Script ชีตซิงก์ (ลงท้าย /exec) — มือถือกับคอมเห็นรายการเดียวกัน
+   ข้อมูลไปอยู่แท็บ ซิงค์รับเข้า_<สาขา> / ซิงค์ตีคืน_<สาขา> ของชีตกลาง · ฐานสินค้าอยู่แท็บ ฐานสินค้า */
 window.APP_CONFIG = {
+  "SYNC_URL": "https://script.google.com/macros/s/AKfycbwh61f39okKUMOiZYpbgBb0iKws6CJUnzuM2usHoIGxUGbNml35yA5iZj16ssUZ2WP_/exec",
   "MODE": "return",
   "TITLE": "ตีคืนสินค้า",
   "SUBTITLE": "Goods Return · สาขาบริษัท",
@@ -597,6 +608,11 @@ window.APP_CONFIG = {
       "id": "rama4",
       "name": "พระราม 4",
       "pin": "0000"
+    },
+    {
+      "id": "official-onnut",
+      "name": "Official Store Onnut",
+      "pin": "4321"
     }
   ]
 }
@@ -641,7 +657,7 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
   const branchById = (id) => CFG.BRANCHES.find((b) => b.id === id)
 
   /* ---------- localStorage (ห่อ try/catch) ---------- */
-  const K = { settings: 'rc_settings_' + M, session: 'rc_session_' + M, entries: 'rc_entries_' + M, extra: 'rc_products_extra' }
+  const K = { settings: 'rc_settings_' + M, session: 'rc_session_' + M, entries: 'rc_entries_' + M, extra: 'rc_products_extra', sync: 'rc_sync_' + M, srv: 'rc_products_srv', pend: 'rc_products_push' }
   function lsGet(k, def) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : def } catch (e) { return def } }
   function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)) } catch (e) { /* ไม่เป็นไร */ } }
   const getSettings = () => Object.assign({ user: '', lastBranch: '' }, lsGet(K.settings, {}))
@@ -660,15 +676,19 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     Object.keys(oldPend).forEach((c) => { if (!BASE[c] && Array.isArray(oldPend[c])) extra[c] = oldPend[c] })
     lsSet(K.extra, extra)
   }
+  // ฐานสินค้าจากชีต (แท็บ ฐานสินค้า) — ถ้ายังโหลดไม่ได้ ใช้ไฟล์ที่ฝังไว้แทน
+  let SRV = lsGet(K.srv, null) || { ver: '', map: null }
+  let PEND = lsGet(K.pend, {}) || {} // สินค้าที่เพิ่ม/แก้ในเครื่องนี้ รอส่งขึ้นชีต
+  function addProd(code, name, pack) { extra[code] = [name, pack]; PEND[code] = [name, pack]; lsSet(K.pend, PEND) }
   let products = {}
   let codeList = []
   function rebuildProducts() {
-    products = Object.assign({}, BASE, extra)
+    products = Object.assign({}, SRV.map && Object.keys(SRV.map).length ? SRV.map : BASE, extra)
     codeList = Object.keys(products).sort().map((c) => ({ c: c, d: c.replace(/\D/g, ''), z: c.replace(/\D/g, '').replace(/^0+/, '') }))
   }
   rebuildProducts()
   const prodCount = () => codeList.length
-  const saveProducts = () => { lsSet(K.extra, extra); rebuildProducts() }
+  const saveProducts = () => { lsSet(K.extra, extra); rebuildProducts(); if (typeof scheduleSync === 'function' && Object.keys(PEND).length) scheduleSync(500) }
   let sending = false
   const lg = { branchId: '' }
   let selDate = todayKey()
@@ -678,6 +698,144 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     entries = entries.filter((e) => e.date >= cut) // เก็บย้อนหลัง 14 วันในเครื่อง
   }
   const saveEntries = () => lsSet(K.entries, entries)
+
+  /* =====================================================================
+     ซิงก์มือถือ ↔ คอม (Apps Script action "syncEntries")
+     - บันทึก/แก้/ลบ → ส่งขึ้นชีตอัตโนมัติภายใน ~1 วินาที
+     - เปิด/รีเฟรชหน้าเว็บ หรือทุก 20 วินาที → ดึงรายการของทุกเครื่องในสาขาเดียวกันมาแสดง
+     - แต่ละรายการมี ID ของตัวเอง ค่าที่แก้ทีหลังสุดชนะ ไม่มีการปนกันระหว่างแอป/สาขา
+     ===================================================================== */
+  const SYNC_URL = String(CFG.SYNC_URL || '').trim()
+  let SYS = lsGet(K.sync, null)
+  if (!SYS || typeof SYS !== 'object' || SYS.v !== 1) {
+    SYS = { v: 1, dirty: {}, tomb: {}, off: 0 }
+    entries.forEach((e) => { SYS.dirty[e.id] = 1 }) // รายการเดิมในเครื่อง ส่งขึ้นชีตด้วย
+  }
+  const SY = { state: 'idle', at: 0, msg: '', timer: null, inflight: null, again: false }
+  const nowT = () => Date.now() + (SYS.off || 0)
+  const saveSys = () => lsSet(K.sync, SYS)
+  function scheduleSync(ms) { clearTimeout(SY.timer); SY.timer = setTimeout(() => { syncEntries() }, ms == null ? 800 : ms) }
+  function touchEntry(e) { e.u = nowT(); SYS.dirty[e.id] = 1; delete SYS.tomb[e.id]; saveSys(); scheduleSync() }
+  function removeEntries(ids) {
+    const set = new Set(ids)
+    entries.forEach((e) => { if (set.has(e.id)) { SYS.tomb[e.id] = { t: nowT(), date: e.date, b: e.branchId }; SYS.dirty[e.id] = 1 } })
+    entries = entries.filter((e) => !set.has(e.id))
+    saveEntries(); saveSys(); scheduleSync(300)
+  }
+  const syncCut = () => todayKey(new Date(Date.now() - 14 * 86400000))
+  const canSync = () => !!(SYNC_URL && SESSION)
+  function syncPayload() {
+    const items = []
+    Object.keys(SYS.dirty).forEach((id) => {
+      const e = entries.find((x) => x.id === id)
+      if (e) { if (e.branchId === SESSION.branchId) items.push({ id: e.id, u: e.u || 0, date: e.date, time: e.time, ts: e.ts, user: e.user, code: e.code, name: e.name, pack: e.pack, qty: e.qty, note: e.note || '', branchId: e.branchId }) }
+      else if (SYS.tomb[id] && (!SYS.tomb[id].b || SYS.tomb[id].b === SESSION.branchId)) items.push({ id: id, del: 1, t: SYS.tomb[id].t, date: SYS.tomb[id].date })
+      else if (!SYS.tomb[id]) delete SYS.dirty[id]
+    })
+    return items
+  }
+  async function syncEntries() {
+    if (!canSync()) return
+    if (SY.inflight) { SY.again = true; return SY.inflight }
+    SY.inflight = doSync()
+    try { await SY.inflight } finally { SY.inflight = null }
+    if (SY.again) { SY.again = false; scheduleSync(200) }
+  }
+  async function doSync() {
+    const bid = SESSION.branchId
+    const sent = syncPayload()
+    const prodSent = Object.keys(PEND).map((c) => ({ code: c, name: PEND[c][0], pack: PEND[c][1] }))
+    SY.state = 'busy'
+    updateSyncUi()
+    const t0 = Date.now()
+    let d
+    try {
+      const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null
+      const tm = setTimeout(() => { if (ctrl) ctrl.abort() }, 30000)
+      const res = await fetch(SYNC_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'syncEntries', app: M, branch: branchById(bid).name, branchId: bid, from: syncCut(), items: sent, user: SESSION.user, prodVer: SRV.ver || '', products: prodSent }), signal: ctrl ? ctrl.signal : undefined })
+      clearTimeout(tm)
+      const txt = await res.text()
+      let j
+      try { j = JSON.parse(txt) } catch (e) { throw new Error(/<html/i.test(txt) ? 'Apps Script ตอบกลับเป็นหน้าเว็บ — ตรวจการ Deploy (Who has access: Anyone)' : 'ข้อมูลตอบกลับผิดรูปแบบ') }
+      if (!j.ok) throw new Error(j.message || j.error || 'ซิงก์ไม่สำเร็จ')
+      d = j.data || {}
+    } catch (e) {
+      SY.state = 'err'
+      SY.msg = e && e.name === 'AbortError' ? 'หมดเวลารอ' : navigator.onLine === false ? 'ไม่มีอินเทอร์เน็ต' : (e && e.message) || 'เชื่อมต่อไม่ได้'
+      updateSyncUi()
+      return
+    }
+    // ฐานสินค้า: ส่งสำเร็จแล้วเอาออกจากคิว / รับรายการล่าสุดจากชีต
+    prodSent.forEach((p) => { if (PEND[p.code] && PEND[p.code][0] === p.name && PEND[p.code][1] === p.pack) { delete PEND[p.code]; delete extra[p.code] } })
+    lsSet(K.pend, PEND); lsSet(K.extra, extra)
+    if (d.products && typeof d.products === 'object') { SRV = { ver: String(d.prodVer || ''), map: d.products }; lsSet(K.srv, SRV) }
+    if (prodSent.length || d.products) rebuildProducts()
+    if (!SESSION || SESSION.branchId !== bid) return
+    if (d.serverTime) { const off = Math.round(Number(d.serverTime) - (t0 + Date.now()) / 2); if (isFinite(off)) SYS.off = off }
+    // ส่งสำเร็จ และไม่ได้แก้ซ้ำระหว่างรอ → ไม่ต้องส่งอีก
+    sent.forEach((s) => {
+      const e = entries.find((x) => x.id === s.id)
+      if (s.del ? !e && SYS.tomb[s.id] && SYS.tomb[s.id].t === s.t : e && (e.u || 0) === s.u) delete SYS.dirty[s.id]
+    })
+    let got = 0
+    const srv = new Map()
+    ;(d.items || []).forEach((s) => srv.set(String(s.id), s))
+    const dels = new Map()
+    ;(d.dels || []).forEach((x) => dels.set(String(x.id), Number(x.t) || 0))
+    const br = branchById(bid).name
+    // ลบตามเครื่องอื่น / ตามที่ลบแถวในชีต
+    entries = entries.filter((e) => {
+      if (e.branchId !== bid || SYS.dirty[e.id]) return true
+      if (dels.has(e.id) && dels.get(e.id) >= (e.u || 0)) { got++; return false }
+      if (e.date >= syncCut() && !srv.has(e.id)) { got++; return false }
+      return true
+    })
+    dels.forEach((t, id) => { if (!SYS.tomb[id]) SYS.tomb[id] = { t: t, b: bid, date: '' } })
+    srv.forEach((s, id) => {
+      if (SYS.dirty[id]) return
+      const su = Number(s.u) || 0
+      const tb = SYS.tomb[id]
+      if (tb && tb.t >= su) return
+      const e = entries.find((x) => x.id === id)
+      const rec = { id: id, ts: Number(s.ts) || 0, date: s.date, time: s.time, branchId: bid, branch: br, user: s.user, code: s.code, name: s.name, pack: s.pack, qty: Number(s.qty) || 0, note: s.note || '', u: su }
+      if (!e) { entries.push(rec); got++ }
+      else if (su > (e.u || 0)) { Object.assign(e, rec); got++ }
+    })
+    // ล้าง tomb เก่า (เกิน 45 วัน)
+    const tcut = nowT() - 45 * 86400000
+    Object.keys(SYS.tomb).forEach((id) => { if (SYS.tomb[id].t < tcut && !SYS.dirty[id]) delete SYS.tomb[id] })
+    saveEntries()
+    saveSys()
+    SY.state = 'ok'
+    SY.at = Date.now()
+    SY.msg = ''
+    if ((got && view === 'main' || d.products && view === 'products') && !document.querySelector('.modal-ov, .modal-sheet, #pk-ov')) render()
+    else updateSyncUi()
+  }
+  function syncLineHtml() {
+    if (!SESSION) return ''
+    if (!SYNC_URL) return '⚠️ ยังไม่ได้ใส่ SYNC_URL — ข้อมูลอยู่ในเครื่องนี้เท่านั้น'
+    const n = Object.keys(SYS.dirty).length
+    const hm = (t) => { const x = new Date(t); return pad2(x.getHours()) + ':' + pad2(x.getMinutes()) + ':' + pad2(x.getSeconds()) }
+    if (SY.state === 'err') return '⚠️ ซิงก์ไม่ได้: ' + esc(SY.msg) + (n ? ' (ค้างส่ง ' + n + ' รายการ เก็บไว้ในเครื่องแล้ว)' : '') + ' <button type="button" data-act="sync-now">ลองใหม่</button>'
+    if (SY.state === 'busy') return '🔄 กำลังซิงก์…'
+    if (SY.state === 'ok') return '🔗 ซิงก์กับทุกเครื่องของสาขานี้แล้ว · ' + hm(SY.at) + (n ? ' · รอส่ง ' + n : '') + ' <button type="button" data-act="sync-now">ซิงก์ตอนนี้</button>'
+    return '🔗 ซิงก์อัตโนมัติ' + (n ? ' · รอส่ง ' + n : '')
+  }
+  function updateSyncUi() {
+    const html = syncLineHtml()
+    document.querySelectorAll('.sync-line').forEach((el) => {
+      el.innerHTML = html
+      el.classList.toggle('err', !!html && (SY.state === 'err' || !SYNC_URL))
+    })
+  }
+  function flushBeacon() {
+    try {
+      if (!canSync() || (!Object.keys(SYS.dirty).length && !Object.keys(PEND).length) || !navigator.sendBeacon) return
+      const body = JSON.stringify({ action: 'syncEntries', app: M, branch: branchById(SESSION.branchId).name, branchId: SESSION.branchId, from: syncCut(), items: syncPayload(), user: SESSION.user, prodVer: SRV.ver || '', products: Object.keys(PEND).map((c) => ({ code: c, name: PEND[c][0], pack: PEND[c][1] })) })
+      navigator.sendBeacon(SYNC_URL, new Blob([body], { type: 'text/plain;charset=utf-8' }))
+    } catch (e) { /* รอบหน้าส่งซ้ำ */ }
+  }
   function getSession() {
     const s = lsGet(K.session, null)
     if (!s || s.date !== todayKey() || !branchById(s.branchId) || !String(s.user || '').trim()) return null
@@ -765,13 +923,16 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
       }
       const name = $('#f-name', sh).value.trim()
       const pack = $('#f-pack', sh).value.trim()
-      if (!products[code] && name) { extra[code] = [name, pack]; saveProducts() }
+      if (!products[code] && name) { addProd(code, name, pack); saveProducts() }
       if (prev) {
         prev.name = name; prev.pack = pack; prev.qty = q; prev.note = note
+        touchEntry(prev)
         toast('แก้ไขแล้ว')
       } else {
         const now = new Date()
-        entries.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), ts: now.getTime(), date: todayKey(now), time: timeKey(now), branchId: SESSION.branchId, branch: branchById(SESSION.branchId).name, user: SESSION.user, code: code, name: name, pack: pack, qty: q, note: note })
+        const ne = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), ts: now.getTime(), date: todayKey(now), time: timeKey(now), branchId: SESSION.branchId, branch: branchById(SESSION.branchId).name, user: SESSION.user, code: code, name: name, pack: pack, qty: q, note: note }
+        entries.push(ne)
+        touchEntry(ne)
         selDate = todayKey()
         toast('บันทึกแล้ว: ' + (name || code) + ' × ' + fmtNum(q))
         try { if (navigator.vibrate) navigator.vibrate(40) } catch (e) { /* ไม่เป็นไร */ }
@@ -803,7 +964,9 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     const save = (note) => {
       const q = Number(val)
       const now = new Date()
-      entries.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), ts: now.getTime(), date: todayKey(now), time: timeKey(now), branchId: SESSION.branchId, branch: branchById(SESSION.branchId).name, user: SESSION.user, code: code, name: name, pack: pack, qty: q, note: note || '' })
+      const ne = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), ts: now.getTime(), date: todayKey(now), time: timeKey(now), branchId: SESSION.branchId, branch: branchById(SESSION.branchId).name, user: SESSION.user, code: code, name: name, pack: pack, qty: q, note: note || '' }
+      entries.push(ne)
+      touchEntry(ne)
       saveEntries()
       selDate = todayKey()
       toast('บันทึกแล้ว: ' + (name || code) + ' × ' + fmtNum(q))
@@ -1262,6 +1425,7 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     view = 'main'
     selDate = todayKey()
     render()
+    syncEntries()
     toast('ยินดีต้อนรับ ' + name + ' · สาขา' + b.name)
   }
   function viewMain() {
@@ -1279,7 +1443,8 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
       '<button type="button" class="act primary" data-act="scan"><span class="ic">📷</span><span class="tx"><b>สแกน QR สินค้า</b><small>เล็งที่ QR แล้วใส่จำนวน' + esc(CFG.SHEET) + '</small></span><span class="chev">›</span></button>' +
       '<button type="button" class="act" data-act="code"><span class="ic">🔢</span><span class="tx"><b>กรอกรหัสเอง</b><small>พิมพ์แค่ตัวเลขบางส่วน แล้วเลือกรหัสจากรายการ</small></span><span class="chev">›</span></button></div>' +
       (dates.length > 1 ? '<div class="chips" style="margin:14px 0 0">' + dates.map((d) => '<button type="button" class="chip' + (d === selDate ? ' on' : '') + '" data-act="pick-date" data-d="' + esc(d) + '">' + esc(dLabel(d)) + '</button>').join('') + '</div>' : '') +
-      '<div class="sec">รายการ' + esc(CFG.SHEET) + (isToday ? 'วันนี้' : 'วันที่ ' + esc(selDate)) + '</div>' +
+      '<div class="sync-line"></div>' +
+      '<div class="sec-row"><div class="sec">รายการ' + esc(CFG.SHEET) + (isToday ? 'วันนี้' : 'วันที่ ' + esc(selDate)) + '</div>' + (list.length ? '<button type="button" class="clr" data-act="clear-day">🧹 ล้างรายการ</button>' : '') + '</div>' +
       (list.length ? list.map((e) =>
         '<div class="ent"><div class="info"><div class="nm">' + esc(e.name || e.code) + '</div><div class="sub">' + esc(e.code) + ' · ' + esc(e.time) + (e.note ? ' · ' + esc(e.note) : '') + '</div></div>' +
         '<div class="qty">' + fmtNum(e.qty) + '</div>' +
@@ -1291,6 +1456,7 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     dock.innerHTML =
       '<button type="button" class="btn btn-secondary" data-act="print"' + (list.length ? '' : ' disabled') + '>🖨️ พิมพ์</button>' +
       '<button type="button" class="btn grow btn-primary" data-act="xlsx"' + (list.length ? '' : ' disabled') + '>📗 ส่งออก Excel (' + list.length + ' รายการ)</button>'
+    updateSyncUi()
   }
   function render() {
     SESSION = getSession()
@@ -1435,16 +1601,16 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
   async function saveDraft() {
     if (!draft) return
     const rows = draft.rows
-    rows.forEach((r) => { extra[r[0]] = [r[1], r[2]] })
+    rows.forEach((r) => { addProd(r[0], r[1], r[2]) })
     saveProducts()
-    toast('เพิ่ม/อัปเดตในฐานสินค้าของเครื่องนี้แล้ว ' + rows.length + ' รายการ', 'ok', 3500)
+    toast('เพิ่ม/อัปเดตฐานสินค้าแล้ว ' + rows.length + ' รายการ — ซิงก์ขึ้นชีตให้ทุกเครื่อง', 'ok', 3500)
     draft = null
     render()
   }
   async function addOne() {
     const code = parseCode($('#p-code').value), name = $('#p-name').value.trim(), pack = $('#p-pack').value.trim()
     if (!code || !name) { toast('ใส่รหัสและชื่อสินค้าก่อน', 'err'); return }
-    extra[code] = [name, pack]; saveProducts()
+    addProd(code, name, pack); saveProducts()
     toast((BASE[code] ? 'แก้ไข ' : 'เพิ่ม ') + code + ' ' + name + ' แล้ว')
     render()
   }
@@ -1454,13 +1620,13 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     let list = matchCodes(q).list
     if (!list.length) { const n = q.toLowerCase(); list = codeList.filter((it) => String(products[it.c][0] || '').toLowerCase().indexOf(n) >= 0).map((it) => it.c) }
     if (!list.length) return '<div class="sugg-hint">ไม่พบ "' + esc(q) + '"</div>'
-    return list.slice(0, 30).map((c) => '<div class="row" style="grid-template-columns:minmax(0,1fr) auto"><div><div class="row-name">' + esc(products[c][0] || c) + '</div><div class="row-sub"><b>' + esc(c) + '</b>' + esc(products[c][1] || '') + (extra[c] ? '<span class="tag">' + (BASE[c] ? 'แก้ในเครื่องนี้' : 'เพิ่มในเครื่องนี้') + '</span>' : '') + '</div></div>' +
-      (extra[c] ? '<button type="button" class="ib" data-act="p-del" data-id="' + esc(c) + '" aria-label="ลบ">🗑</button>' : '<span></span>') + '</div>').join('') +
+    return list.slice(0, 30).map((c) => '<div class="row" style="grid-template-columns:minmax(0,1fr) auto"><div><div class="row-name">' + esc(products[c][0] || c) + '</div><div class="row-sub"><b>' + esc(c) + '</b>' + esc(products[c][1] || '') + (PEND[c] ? '<span class="tag">รอซิงก์ขึ้นชีต</span>' : '') + '</div></div>' +
+      (PEND[c] ? '<button type="button" class="ib" data-act="p-del" data-id="' + esc(c) + '" aria-label="ลบ">🗑</button>' : '<span></span>') + '</div>').join('') +
       (list.length > 30 ? '<div class="sugg-hint">มีอีก ' + (list.length - 30) + ' รายการ</div>' : '')
   }
   function viewProducts() {
-    const nExtra = Object.keys(extra).length
-    setTop('ฐานสินค้า', prodCount().toLocaleString('en-US') + ' รายการ' + (nExtra ? ' · เพิ่ม/แก้ในเครื่องนี้ ' + nExtra : ''), true, 'products')
+    const nExtra = Object.keys(PEND).length
+    setTop('ฐานสินค้า', prodCount().toLocaleString('en-US') + ' รายการ' + (nExtra ? ' · รอซิงก์ ' + nExtra : ''), true, 'products')
     $('#dock').hidden = true
     draft = null
     $('#view').innerHTML =
@@ -1471,7 +1637,7 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
       '<input id="p-file" type="file" accept=".xlsx,.csv,.txt,.tsv" style="width:100%;margin-bottom:10px">' +
       '<label class="field"><span>หรือคัดลอกจาก Excel มาวางที่นี่</span><textarea id="p-paste" rows="3" placeholder="รหัส[Tab]ชื่อ[Tab]หน่วยนับ"></textarea></label>' +
       '<button type="button" class="btn btn-secondary btn-block" data-act="p-read">อ่านข้อมูลที่วาง</button><div id="p-preview" style="margin-top:12px"></div></div>' +
-      '<p style="color:var(--muted);font-size:13px;margin:12px 2px">สินค้าที่เพิ่มที่นี่จะอยู่ในเครื่องนี้เท่านั้น — ถ้าต้องการให้ทุกเครื่องเห็น ให้เพิ่มลงไฟล์ฐานสินค้าในเว็บ</p>' +
+      '<p style="color:var(--muted);font-size:13px;margin:12px 2px">สินค้าที่เพิ่มที่นี่จะซิงก์ขึ้นแท็บ "ฐานสินค้า" ในชีตกลาง ทุกเครื่องทุกสาขาเห็นเหมือนกัน — จะแก้/ลบสินค้า ทำในแท็บนั้นได้เลย</p>' +
       '<p style="text-align:center"><button type="button" class="btn btn-secondary" data-act="back">‹ กลับ</button></p>'
     const f = $('#p-file')
     f.onchange = async () => {
@@ -1493,7 +1659,7 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     else if (act === 'pin-key') pinPress(el.getAttribute('data-k'))
     else if (act === 'tab-main') { view = 'main'; render() }
     else if (act === 'back') { view = 'main'; render() }
-    else if (act === 'logout') confirmBox('ออกจากระบบ', 'รายการที่ยังไม่ส่งยังอยู่ในเครื่อง ออกจากระบบตอนนี้ได้', 'ออกจากระบบ', () => { closeScanner(); lsSet(K.session, null); view = 'login'; render() })
+    else if (act === 'logout') confirmBox('ออกจากระบบ', 'รายการที่บันทึกไว้ยังอยู่ ออกจากระบบตอนนี้ได้', 'ออกจากระบบ', () => { closeScanner(); lsSet(K.session, null); view = 'login'; render() })
     else if (act === 'scan') openScanner()
     else if (act === 'scan-close') closeScanner()
     else if (act === 'scan-code') openCodeModal()
@@ -1505,22 +1671,35 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     else if (act === 'p-add') addOne()
     else if (act === 'p-del') {
       const c = id
-      confirmBox('ลบสินค้าที่เพิ่มในเครื่องนี้', (BASE[c] ? 'คืนค่า ' + c + ' กลับเป็นข้อมูลจากไฟล์ฐานสินค้า?' : 'ลบ ' + c + ' ออกจากฐานสินค้าของเครื่องนี้?'), 'ตกลง', () => { delete extra[c]; saveProducts(); render() })
+      confirmBox('ยกเลิกสินค้าที่รอซิงก์', 'ยกเลิกการเพิ่ม/แก้ ' + c + ' (ยังไม่ได้ขึ้นชีต)?', 'ตกลง', () => { delete extra[c]; delete PEND[c]; lsSet(K.pend, PEND); saveProducts(); render() })
     }
     else if (act === 'xlsx') exportExcel()
     else if (act === 'print') printEntries()
     else if (act === 'edit') { const e = entries.find((x) => x.id === id); if (e) openEntryModal(e.code, e) }
     else if (act === 'del') {
       const e = entries.find((x) => x.id === id)
-      if (e) confirmBox('ลบรายการ', 'ลบ ' + (e.name || e.code) + ' × ' + fmtNum(e.qty) + ' ?', 'ลบ', () => { entries = entries.filter((x) => x.id !== id); saveEntries(); render() })
+      if (e) confirmBox('ลบรายการ', 'ลบ ' + (e.name || e.code) + ' × ' + fmtNum(e.qty) + ' ? (ลบจากทุกเครื่องและในชีตด้วย)', 'ลบ', () => { removeEntries([id]); render() })
+    }
+    else if (act === 'sync-now') { await syncEntries(); if (SY.state === 'ok') toast('ซิงก์แล้ว'); else if (SY.state === 'err') toast(SY.msg, 'err', 3500) }
+    else if (act === 'clear-day') {
+      const list = myEntries()
+      if (!list.length) { toast('ไม่มีรายการให้ล้าง'); return }
+      const dl = selDate === todayKey() ? 'วันนี้' : 'วันที่ ' + selDate
+      confirmBox('🧹 ล้างรายการ' + dl, 'ลบรายการ' + CFG.SHEET + dl + ' ของสาขา' + SESSION_BRANCH().name + ' ทั้งหมด ' + list.length + ' รายการ — จะหายจากทุกเครื่องและในชีตด้วย กู้คืนไม่ได้', 'ล้างรายการ', () => { removeEntries(list.map((x) => x.id)); toast('ล้างรายการแล้ว'); render() })
     }
   })
 
   pruneEntries()
   saveEntries()
-  if (getSession()) view = 'main' // เปิดใหม่/รีเฟรชแล้วยังล็อกอินอยู่ ไม่ต้องล็อกอินซ้ำ
+  saveSys()
+  if (getSession()) { view = 'main'; SESSION = getSession() } // เปิดใหม่/รีเฟรชแล้วยังล็อกอินอยู่ ไม่ต้องล็อกอินซ้ำ
   render()
-  if (window.__RC_TEST) window.__RC = { entries: () => entries, products: () => products, matchCodes: matchCodes, printEntries: printEntries, resolveCode: resolveCode, openCodeModal: openCodeModal, buildXlsx: buildXlsx, readXlsx: readXlsx, parseDelimited: parseDelimited, rowsToProducts: rowsToProducts }
+  syncEntries()
+  setInterval(() => { if (!document.hidden && SESSION) syncEntries() }, 20000)
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) syncEntries(); else flushBeacon() })
+  window.addEventListener('pagehide', flushBeacon)
+  window.addEventListener('online', () => syncEntries())
+  if (window.__RC_TEST) window.__RC = { entries: () => entries, products: () => products, matchCodes: matchCodes, printEntries: printEntries, syncEntries: syncEntries, SYS: () => SYS, SRV: () => SRV, PEND: () => PEND, SY: SY, resolveCode: resolveCode, openCodeModal: openCodeModal, buildXlsx: buildXlsx, readXlsx: readXlsx, parseDelimited: parseDelimited, rowsToProducts: rowsToProducts }
 })()
 
 </script>
