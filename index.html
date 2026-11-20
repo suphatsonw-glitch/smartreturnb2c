@@ -427,6 +427,48 @@ input[type='file'] { padding: 8px; font-size: 14px; }
 .sec-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 18px 2px 8px; }
 .sec-row .sec { margin: 0; }
 .sec-row .clr { color: var(--red); font-size: 14px; }
+
+.qk-cancel { background: #fff; color: #4b5b52; border: 2px solid #c9d3cd; font-weight: 800; }
+.qk-cancel:active { background: #eef2ef; }
+/* ---------- สแกนซ้ำ: แทนที่ / บวกเพิ่ม / ล้าง ---------- */
+.qk-rep-h { margin: 10px 0 6px; padding: 7px 10px; border-radius: 10px; background: #fff7e0; border: 1px solid #f3d98a; color: #6b5200; font-size: 13.5px; font-weight: 600; }
+.qk-rep-h b { font-size: 15px; }
+.qk-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.qk-ch { min-height: 60px; padding: 6px 8px; border: 2px solid var(--green-m); border-radius: 12px; background: #fff; font: inherit; color: var(--df-green); cursor: pointer; touch-action: manipulation; }
+.qk-ch b { display: block; font-size: 16px; font-weight: 800; }
+.qk-ch small { display: block; font-size: 12px; color: var(--muted); font-weight: 600; }
+.qk-ch.main { background: var(--df-green, #1a4a2e); border-color: var(--df-green, #1a4a2e); color: #fff; }
+.qk-ch.main small { color: rgba(255,255,255,.85); }
+.qk-ch:active { transform: scale(0.97); }
+.qk-clr { color: var(--red) !important; }
+
+/* ---------- ของไม่ได้คุณภาพ / ทะเบียนวันหมดอายุ ---------- */
+.qk-qc { display: block; width: 100%; margin: 8px 0 0; min-height: 46px; border: 2px dashed #e0a800; border-radius: 12px; background: #fff7e0; color: #7a5600; font: inherit; font-weight: 800; cursor: pointer; }
+.qk-reason.qc { border-color: #e0a800; background: #fff7e0; color: #7a5600; }
+.ent.qc { border-left: 4px solid #e0a800; background: #fffbeb; }
+.ib.mv { background: #fdecea; border-color: #f0b9b2; }
+.mv-done { font-size: 12px; font-weight: 800; color: #1a7a3c; padding: 0 4px; white-space: nowrap; }
+.ent.xr { border-left: 4px solid #b8dfc8; }
+.ent.xr.x-warn { border-left-color: #e0a800; } .ent.xr.x-hot { border-left-color: #e67e22; background: #fff6ec; } .ent.xr.x-bad { border-left-color: #c0392b; background: #fdecea; }
+.xd { text-align: right; white-space: nowrap; }
+.xd b { display: block; font-size: 15px; }
+.xb { display: inline-block; font-size: 11.5px; font-weight: 800; border-radius: 99px; padding: 1px 8px; background: #e8f5ee; color: #1a7a3c; }
+.xb.x-warn { background: #fff4cc; color: #7a5600; } .xb.x-hot { background: #ffe3c7; color: #a04000; } .xb.x-bad { background: #c0392b; color: #fff; }
+.stat.x-warn-s b { color: #b9770e; } .stat.x-bad-s b { color: #c0392b; }
+.ret-note{margin:12px 0 0;padding:10px 12px;border-radius:12px;background:#fff4e6;border:1px solid #f5cf9f;color:#8a4b08;font-size:13px;line-height:1.5}
+
+.xsearch { margin: 14px 0 0; }
+.xsearch input { width: 100%; min-height: 48px; border: 1.5px solid #cfe0d4; border-radius: 14px; padding: 10px 14px; font: inherit; font-size: 16px; background: #fff; }
+.xsearch input:focus { outline: none; border-color: #2d8a52; box-shadow: 0 0 0 3px rgba(45,138,82,.15); }
+.xg { background: #fff; border: 1px solid #e1ebe4; border-left: 5px solid #b8dfc8; border-radius: 14px; padding: 10px 10px 6px 12px; margin: 8px 0; }
+.xg.x-warn { border-left-color: #e0a800; } .xg.x-hot { border-left-color: #e67e22; background: #fffaf3; } .xg.x-bad { border-left-color: #c0392b; background: #fff6f5; }
+.xg-h { display: flex; align-items: center; gap: 6px; } .xg-h .info { flex: 1; min-width: 0; }
+.xl { display: flex; align-items: center; gap: 8px; padding: 6px 0 4px; margin-top: 4px; border-top: 1px dashed #e3ece6; }
+.xl .xq { font-size: 18px; min-width: 38px; text-align: right; } .xl .xe { flex: 1; font-weight: 700; font-size: 14px; }
+.ib.sm { width: 34px; height: 34px; min-height: 34px; font-size: 14px; }
+.qk-lots { margin: 0 0 10px; padding: 8px 10px; border-radius: 10px; background: #f3f8f4; font-size: 13px; color: #35573f; }
+.qk-lots b { color: #145f2f; }
+.pk-doc tr.sec td { background: #e8f5ee; color: #145f2f; font-weight: 800; padding-top: 6px; padding-bottom: 6px; }
 </style>
 <style>
 /* ---------- ใบพิมพ์ (PrintKit) ---------- */
@@ -509,6 +551,7 @@ window.PrintKit = (function () {
     h += '<thead><tr>' + doc.cols.map(function (c) { return '<th' + (c.cls === 'n' ? ' class="n"' : '') + '>' + esc(c.h) + '</th>' }).join('') + '</tr></thead><tbody>'
     if (!doc.rows.length) h += '<tr><td colspan="' + doc.cols.length + '" class="pk-empty">' + esc(doc.empty || 'ไม่มีรายการ') + '</td></tr>'
     doc.rows.forEach(function (r) {
+      if (r.sec) { h += '<tr class="sec"><td colspan="' + doc.cols.length + '">' + esc(r.sec) + '</td></tr>'; return }
       h += '<tr' + (r.hl ? ' class="hl"' : '') + '>' + r.cells.map(function (v, i) { var c = doc.cols[i].cls; return '<td' + (c ? ' class="' + c + '"' : '') + '>' + esc(v) + '</td>' }).join('') + '</tr>'
     })
     h += '</tbody>'
@@ -691,10 +734,14 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
   const saveProducts = () => { lsSet(K.extra, extra); rebuildProducts(); if (typeof scheduleSync === 'function' && Object.keys(PEND).length) scheduleSync(500) }
   let sending = false
   const lg = { branchId: '' }
-  let selDate = todayKey()
+  const RET = CFG.MODE === 'return' // ตีคืน: เก็บเป็นรอบ จนกด "ส่งคืนคลัง"
+  const defSel = () => (RET ? 'pending' : todayKey())
+  let selDate = defSel()
 
   function pruneEntries() {
+    if (CFG.EXPIRY) return // ทะเบียนวันหมดอายุ: เก็บจนกว่าจะลบเอง
     const cut = todayKey(new Date(Date.now() - 14 * 86400000))
+    if (RET) { entries = entries.filter((e) => !e.sent || e.sent >= cut); return } // ตีคืน: รอส่งคืน = เก็บไว้จนกดส่ง, ส่งแล้วเก็บดูย้อนหลัง 14 วัน
     entries = entries.filter((e) => e.date >= cut) // เก็บย้อนหลัง 14 วันในเครื่อง
   }
   const saveEntries = () => lsSet(K.entries, entries)
@@ -722,13 +769,13 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     entries = entries.filter((e) => !set.has(e.id))
     saveEntries(); saveSys(); scheduleSync(300)
   }
-  const syncCut = () => todayKey(new Date(Date.now() - 14 * 86400000))
+  const syncCut = () => (CFG.EXPIRY ? '0000-00-00' : todayKey(new Date(Date.now() - (RET ? 90 : 14) * 86400000)))
   const canSync = () => !!(SYNC_URL && SESSION)
   function syncPayload() {
     const items = []
     Object.keys(SYS.dirty).forEach((id) => {
       const e = entries.find((x) => x.id === id)
-      if (e) { if (e.branchId === SESSION.branchId) items.push({ id: e.id, u: e.u || 0, date: e.date, time: e.time, ts: e.ts, user: e.user, code: e.code, name: e.name, pack: e.pack, qty: e.qty, note: e.note || '', branchId: e.branchId }) }
+      if (e) { if (e.branchId === SESSION.branchId) items.push({ id: e.id, u: e.u || 0, date: e.date, time: e.time, ts: e.ts, user: e.user, code: e.code, name: e.name, pack: e.pack, qty: e.qty, note: e.note || '', branchId: e.branchId, exp: e.exp || '', sent: e.sent || '' }) }
       else if (SYS.tomb[id] && (!SYS.tomb[id].b || SYS.tomb[id].b === SESSION.branchId)) items.push({ id: id, del: 1, t: SYS.tomb[id].t, date: SYS.tomb[id].date })
       else if (!SYS.tomb[id]) delete SYS.dirty[id]
     })
@@ -797,7 +844,7 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
       const tb = SYS.tomb[id]
       if (tb && tb.t >= su) return
       const e = entries.find((x) => x.id === id)
-      const rec = { id: id, ts: Number(s.ts) || 0, date: s.date, time: s.time, branchId: bid, branch: br, user: s.user, code: s.code, name: s.name, pack: s.pack, qty: Number(s.qty) || 0, note: s.note || '', u: su }
+      const rec = { id: id, ts: Number(s.ts) || 0, date: s.date, time: s.time, branchId: bid, branch: br, user: s.user, code: s.code, name: s.name, pack: s.pack, qty: Number(s.qty) || 0, note: s.note || '', u: su, exp: s.exp || '', sent: s.sent || '' }
       if (!e) { entries.push(rec); got++ }
       else if (su > (e.u || 0)) { Object.assign(e, rec); got++ }
     })
@@ -842,8 +889,11 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     return s
   }
   // รายการที่แสดง: ของสาขานี้ ตามวันที่เลือก (ค่าเริ่มต้น = วันนี้)
-  const myEntries = (d) => entries.filter((e) => SESSION && e.branchId === SESSION.branchId && e.date === (d || selDate)).sort((a, b) => b.ts - a.ts)
-  const myDates = () => Array.from(new Set(entries.filter((e) => SESSION && e.branchId === SESSION.branchId).map((e) => e.date).concat([todayKey()]))).sort().reverse()
+  const myEntries = (d) => CFG.EXPIRY
+    ? entries.filter((e) => SESSION && e.branchId === SESSION.branchId).sort((a, b) => String(a.exp || '9999').localeCompare(String(b.exp || '9999')) || b.ts - a.ts)
+    : RET ? entries.filter((e) => SESSION && e.branchId === SESSION.branchId && ((d || selDate) === 'pending' ? !e.sent : e.sent === (d || selDate))).sort((a, b) => b.ts - a.ts)
+    : entries.filter((e) => SESSION && e.branchId === SESSION.branchId && e.date === (d || selDate)).sort((a, b) => b.ts - a.ts)
+  const myDates = () => RET ? ['pending'].concat(Array.from(new Set(entries.filter((e) => SESSION && e.branchId === SESSION.branchId && e.sent).map((e) => e.sent))).sort().reverse()) : Array.from(new Set(entries.filter((e) => SESSION && e.branchId === SESSION.branchId).map((e) => e.date).concat([todayKey()]))).sort().reverse()
 
   /* ---------- Toast ---------- */
   let tt = null
@@ -886,6 +936,55 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     if (!s) return ''
     return s.split('|')[0].trim().toUpperCase().replace(/\s+/g, '')
   }
+  /* ---------- ของไม่ได้คุณภาพ (รับเข้า) / วันหมดอายุ (ทะเบียน) ---------- */
+  const QC_PREFIX = '⚠️ ไม่ได้คุณภาพ: '
+  const MOVED_TAG = ' [ส่งตีคืนแล้ว]'
+  const isQc = (e) => String(e.note || '').indexOf(QC_PREFIX) === 0
+  const isMoved = (e) => String(e.note || '').indexOf(MOVED_TAG) >= 0
+  function splitQc(note) { // → { qc, rest, moved }
+    let n = String(note || '')
+    const moved = n.indexOf(MOVED_TAG) >= 0
+    n = n.replace(MOVED_TAG, '')
+    if (n.indexOf(QC_PREFIX) !== 0) return { qc: '', rest: n, moved: moved }
+    n = n.slice(QC_PREFIX.length)
+    const i = n.indexOf(' — ')
+    return { qc: i >= 0 ? n.slice(0, i) : n, rest: i >= 0 ? n.slice(i + 3) : '', moved: moved }
+  }
+  const joinQc = (qc, rest, moved) => (qc ? QC_PREFIX + qc + (rest ? ' — ' + rest : '') : rest) + (moved ? MOVED_TAG : '')
+  // ส่งรายการที่ไม่ได้คุณภาพไปแอปตีคืน (เขียนลงแท็บ ซิงค์ตีคืน_สาขา ผ่านชีตกลาง)
+  async function moveToReturn(e) {
+    if (!SYNC_URL) { toast('ยังไม่ได้ตั้งค่า SYNC_URL', 'err'); return }
+    const sp = splitQc(e.note)
+    const now = new Date()
+    const item = { id: 'mv-' + e.id, u: nowT(), date: todayKey(now), time: timeKey(now), ts: now.getTime(), user: SESSION.user, code: e.code, name: e.name, pack: e.pack, qty: e.qty,
+      note: 'คุณภาพไม่ได้มาตรฐาน — จากรับเข้า: ' + (sp.qc || '-') + (sp.rest ? ' (' + sp.rest + ')' : ''), branchId: e.branchId }
+    try {
+      const res = await fetch(SYNC_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'syncEntries', app: CFG.MOVE_TO, branch: branchById(e.branchId).name, branchId: e.branchId, from: todayKey(), items: [item] }) })
+      const j = JSON.parse(await res.text())
+      if (!j.ok) throw new Error(j.message || 'ส่งไม่สำเร็จ')
+    } catch (err) {
+      toast('ส่งไปตีคืนไม่สำเร็จ: ' + (navigator.onLine === false ? 'ไม่มีอินเทอร์เน็ต' : err.message), 'err', 4000)
+      return
+    }
+    e.note = joinQc(sp.qc, sp.rest, true)
+    touchEntry(e)
+    saveEntries()
+    toast('↩️ ส่ง ' + (e.name || e.code) + ' × ' + fmtNum(e.qty) + ' ไปแอปตีคืนแล้ว', 'ok', 3500)
+    render()
+  }
+  const dayMs = 86400000
+  const daysLeft = (exp) => (exp ? Math.round((Date.parse(exp + 'T00:00:00') - Date.parse(todayKey() + 'T00:00:00')) / dayMs) : null)
+  const WARN = Number(CFG.EXP_WARN_DAYS) || 60 // แจ้งเตือนก่อนหมดอายุกี่วัน (ต้องตีคืนคลัง)
+  function expState(exp) {
+    const d = daysLeft(exp)
+    if (d == null || isNaN(d)) return { cls: '', label: 'ไม่ระบุ', d: null }
+    if (d < 0) return { cls: 'x-bad', label: 'หมดอายุแล้ว ' + -d + ' วัน', d: d }
+    if (d === 0) return { cls: 'x-bad', label: 'หมดอายุวันนี้', d: d }
+    if (d <= 7) return { cls: 'x-hot', label: 'เหลือ ' + d + ' วัน', d: d }
+    if (d <= WARN) return { cls: 'x-warn', label: 'เหลือ ' + d + ' วัน', d: d }
+    return { cls: 'x-ok', label: 'เหลือ ' + d + ' วัน', d: d }
+  }
+  const fmtExp = (k) => { const p = String(k || '').split('-'); return p.length === 3 ? Number(p[2]) + '/' + Number(p[1]) + '/' + p[0] : '-' }
   function openEntryModal(code, existing) {
     const prev = existing || null
     const sameToday = !prev && entries.filter((e) => e.branchId === SESSION.branchId && e.code === code && e.date === todayKey())
@@ -905,7 +1004,9 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
         ? '<label class="field"><span>เหตุผลตีคืน</span><select id="f-reason"><option value="">— เลือกเหตุผล —</option>' +
           reasons.map((r) => '<option' + (curNote === r ? ' selected' : '') + '>' + esc(r) + '</option>').join('') + '</select></label>' +
           '<label class="field"><span>หมายเหตุเพิ่มเติม</span><input id="f-note" type="text" autocomplete="off" value="' + esc(inList ? '' : curNote) + '" placeholder="(ไม่บังคับ)"></label>'
-        : '<label class="field"><span>' + esc(CFG.NOTE_LABEL) + '</span><input id="f-note" type="text" autocomplete="off" value="' + esc(curNote) + '" placeholder="(ไม่บังคับ)"></label>') +
+        : (CFG.EXPIRY ? '<label class="field"><span>วันหมดอายุ</span><input id="f-exp" type="date" value="' + esc(prev && prev.exp ? prev.exp : '') + '"></label>' : '') +
+          (CFG.QC_REASONS ? '<label class="field"><span>สภาพสินค้า</span><select id="f-qc"><option value="">✅ ปกติ</option>' + CFG.QC_REASONS.map((r) => '<option' + (splitQc(curNote).qc === r ? ' selected' : '') + '>⚠️ ' + esc(r) + '</option>').join('') + '</select></label>' : '') +
+          '<label class="field"><span>' + esc(CFG.NOTE_LABEL) + '</span><input id="f-note" type="text" autocomplete="off" value="' + esc(CFG.QC_REASONS ? splitQc(curNote).rest : curNote) + '" placeholder="(ไม่บังคับ)"></label>') +
       '<div class="err" id="f-err"></div>' +
       '<div class="m-actions"><button type="button" class="btn btn-ghost" data-x="no">ยกเลิก</button><button type="button" class="btn btn-primary" data-x="ok">' + (prev ? 'บันทึกการแก้ไข' : '✔ บันทึก') + '</button></div>'
     )
@@ -921,19 +1022,24 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
         if (!r) { err.textContent = 'กรุณาเลือกเหตุผลตีคืน'; return }
         note = r + (note ? ' — ' + note : '')
       }
+      if (CFG.QC_REASONS) note = joinQc($('#f-qc', sh).value.replace(/^⚠️ /, ''), note, prev ? isMoved(prev) : false)
+      let exp = ''
+      if (CFG.EXPIRY) { exp = $('#f-exp', sh).value; if (!exp) { err.textContent = 'กรุณาใส่วันหมดอายุ'; return } }
       const name = $('#f-name', sh).value.trim()
       const pack = $('#f-pack', sh).value.trim()
       if (!products[code] && name) { addProd(code, name, pack); saveProducts() }
       if (prev) {
         prev.name = name; prev.pack = pack; prev.qty = q; prev.note = note
+        if (CFG.EXPIRY) prev.exp = exp
         touchEntry(prev)
         toast('แก้ไขแล้ว')
       } else {
         const now = new Date()
         const ne = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), ts: now.getTime(), date: todayKey(now), time: timeKey(now), branchId: SESSION.branchId, branch: branchById(SESSION.branchId).name, user: SESSION.user, code: code, name: name, pack: pack, qty: q, note: note }
+        if (CFG.EXPIRY) ne.exp = exp
         entries.push(ne)
         touchEntry(ne)
-        selDate = todayKey()
+        selDate = defSel()
         toast('บันทึกแล้ว: ' + (name || code) + ' × ' + fmtNum(q))
         try { if (navigator.vibrate) navigator.vibrate(40) } catch (e) { /* ไม่เป็นไร */ }
         pushRecent(name || code, q)
@@ -952,7 +1058,11 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     const pd = products[code]
     const name = pd ? pd[0] : ''
     const pack = pd ? pd[1] : ''
-    const sumToday = entries.filter((e) => e.branchId === SESSION.branchId && e.code === code && e.date === todayKey()).reduce((a, e) => a + e.qty, 0)
+    const prevList = entries.filter((e) => e.branchId === SESSION.branchId && e.code === code && e.date === todayKey())
+    const sumToday = prevList.reduce((a, e) => a + e.qty, 0)
+    const repeat = !CFG.EXPIRY && prevList.length > 0 // สแกน/กรอกรหัสนี้ซ้ำในวันเดียวกัน → ถามว่าแทนที่ / บวกเพิ่ม / ล้าง
+    let expVal = ''
+    let mode = 'add'
     let val = ''
     const sh = openModal('<div class="qk"></div>')
     sh.tabIndex = -1
@@ -963,13 +1073,28 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     const info = 'รหัส ' + code + (pack ? ' · ' + pack : '') + (sumToday ? ' · วันนี้บันทึกไปแล้ว ' + fmtNum(sumToday) : '')
     const save = (note) => {
       const q = Number(val)
+      if (repeat && mode === 'replace') removeEntries(prevList.map((e) => e.id))
       const now = new Date()
       const ne = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), ts: now.getTime(), date: todayKey(now), time: timeKey(now), branchId: SESSION.branchId, branch: branchById(SESSION.branchId).name, user: SESSION.user, code: code, name: name, pack: pack, qty: q, note: note || '' }
+      if (CFG.EXPIRY) {
+        ne.exp = expVal
+        const same = entries.find((e) => e.branchId === SESSION.branchId && e.code === code && e.exp === expVal)
+        if (same || !(q > 0)) {
+          if (same && q > 0) { same.qty = q; same.user = SESSION.user; same.time = timeKey(now); touchEntry(same); saveEntries() }
+          else if (same) removeEntries([same.id])
+          toast(same ? (q > 0 ? '🔁 แทนที่ล็อตหมด ' + fmtExp(expVal) + ' เป็น ' + fmtNum(q) : '🗑 ลบล็อตหมด ' + fmtExp(expVal) + ' แล้ว') : 'จำนวนเป็น 0 — ไม่ได้บันทึก')
+          closeModal(); render(); return
+        }
+      }
       entries.push(ne)
       touchEntry(ne)
       saveEntries()
-      selDate = todayKey()
-      toast('บันทึกแล้ว: ' + (name || code) + ' × ' + fmtNum(q))
+      selDate = defSel()
+      toast(CFG.EXPIRY ? 'บันทึกแล้ว: ' + (name || code) + ' × ' + fmtNum(q) + ' · หมดอายุ ' + fmtExp(expVal)
+        : String(note || '').indexOf(QC_PREFIX) === 0 ? '⚠️ บันทึกของไม่ได้คุณภาพแล้ว — กด ↩️ ในรายการเพื่อส่งไปตีคืน'
+        : !repeat ? 'บันทึกแล้ว: ' + (name || code) + ' × ' + fmtNum(q)
+        : mode === 'replace' ? '🔁 แทนที่แล้ว: ' + (name || code) + ' = ' + fmtNum(q)
+        : '➕ บวกเพิ่มแล้ว: ' + (name || code) + ' รวม ' + fmtNum(Math.round((sumToday + q) * 1000) / 1000))
       try { if (navigator.vibrate) navigator.vibrate(40) } catch (e) { /* ไม่เป็นไร */ }
       pushRecent(name || code, q)
       closeModal()
@@ -977,7 +1102,7 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
       if (backToCode && !scanOv) setTimeout(openCodeModal, 80) // กรอกรหัสเองจากหน้าหลัก → เปิดช่องรหัสต่อให้เลย (ถ้าสแกนอยู่ กล้องพร้อมสแกนต่อเอง)
     }
     const drawReasons = () => {
-      root.innerHTML = head('เหตุผลตีคืน', 'จำนวน ' + fmtNum(Number(val)) + ' · ' + info) +
+      root.innerHTML = head('เหตุผลตีคืน', (repeat ? (mode === 'replace' ? '🔁 แทนที่เป็น ' : '➕ บวกเพิ่ม ') : 'จำนวน ') + fmtNum(Number(val)) + ' · ' + info) +
         '<div class="qk-reasons">' + reasons.map((r, i) => '<button type="button" class="qk-reason" data-r="' + i + '">' + esc(r) + '</button>').join('') + '</div>' +
         '<label class="field"><span>หมายเหตุเพิ่มเติม (ไม่บังคับ)</span><input id="qk-note" type="text" autocomplete="off" placeholder="พิมพ์แล้วค่อยแตะเหตุผล"></label>' +
         '<div class="m-actions"><button type="button" class="btn btn-ghost" data-x="back">‹ แก้จำนวน</button></div>'
@@ -992,11 +1117,67 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
       else if (k === '.') { if (val.indexOf('.') < 0) val = (val || '0') + '.' }
       else if (val.length < 7) val = val === '0' ? k : val + k
       const d = $('#qk-disp', root); d.textContent = val || '0'; d.className = 'qk-disp' + (val ? '' : ' dim')
+      previewChoices()
     }
-    const ok = () => {
+    const r3 = (x) => Math.round(x * 1000) / 1000
+    function previewChoices() {
+      if (!repeat) return
+      const q = Number(val) || 0
+      const a = $('#qk-pv-add', root), r = $('#qk-pv-rep', root)
+      if (a) a.textContent = 'ยอดวันนี้ ' + fmtNum(sumToday) + ' → ' + fmtNum(r3(sumToday + q))
+      if (r) r.textContent = 'ยอดวันนี้ ' + fmtNum(sumToday) + ' → ' + fmtNum(q)
+    }
+    const ok = (m) => {
+      if (m) mode = m
       const q = Number(val)
       if (!val || !isFinite(q) || q <= 0) { $('#f-err', root).textContent = 'กรุณาใส่จำนวนที่มากกว่า 0'; return }
-      if (reasons) drawReasons(); else save('')
+      if (CFG.EXPIRY) drawExp(); else if (reasons) drawReasons(); else save('')
+    }
+    // รับเข้า: ของไม่ได้คุณภาพ → เลือกเหตุผล (บันทึกเป็นรายการแยก มีปุ่มส่งไปตีคืน)
+    const okQc = () => {
+      const q = Number(val)
+      if (!val || !isFinite(q) || q <= 0) { $('#f-err', root).textContent = 'กรุณาใส่จำนวนที่มากกว่า 0'; return }
+      mode = 'add'
+      root.innerHTML = head('⚠️ ของไม่ได้คุณภาพ', 'จำนวน ' + fmtNum(q) + ' · ' + info) +
+        '<div class="qk-reasons">' + CFG.QC_REASONS.map((r, i) => '<button type="button" class="qk-reason qc" data-r="' + i + '">' + esc(r) + '</button>').join('') + '</div>' +
+        '<label class="field"><span>รายละเอียดเพิ่มเติม (ไม่บังคับ)</span><input id="qk-note" type="text" autocomplete="off" placeholder="พิมพ์แล้วค่อยแตะเหตุผล"></label>' +
+        '<div class="m-actions"><button type="button" class="btn btn-ghost" data-x="back">‹ แก้จำนวน</button></div>'
+      $('[data-x=back]', root).onclick = drawQty
+      root.querySelectorAll('.qk-reason').forEach((b) => {
+        b.onclick = () => { const n = $('#qk-note', root).value.trim(); save(joinQc(CFG.QC_REASONS[Number(b.dataset.r)], n, false)) }
+      })
+    }
+    // ทะเบียนวันหมดอายุ: ใส่วันหมดอายุหลังใส่จำนวน
+    function drawExp() {
+      const q = Number(val)
+      const add = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return todayKey(d) }
+      const lots = lotsOfCode(code)
+      root.innerHTML = head('📅 วันหมดอายุ', 'จำนวน ' + fmtNum(q) + ' · ' + info) +
+        (lots.length ? '<div class="qk-lots">ในทะเบียนแล้ว: ' + lots.map((e) => '<b>' + fmtNum(e.qty) + '</b> หมด ' + esc(fmtExp(e.exp))).join(' · ') + '<br>เลือกวันเดิม = แทนที่จำนวนล็อตนั้น · วันใหม่ = เพิ่มล็อตใหม่</div>' +
+          '<div class="pre-chips">' + lots.map((e) => '<button type="button" class="pre-chip" data-exp="' + esc(e.exp) + '">ล็อต ' + esc(fmtExp(e.exp)) + '</button>').join('') + '</div>' : '') +
+        '<label class="field"><span>วันหมดอายุ (ดูจากฉลากสินค้า)</span><input id="qk-exp" type="date" value="' + esc(expVal) + '" style="font-size:20px;min-height:52px"></label>' +
+        '<div class="pre-chips">' + [30, 60, 90, 180, 365].map((n) => '<button type="button" class="pre-chip" data-add="' + n + '">+' + n + ' วัน</button>').join('') + '</div>' +
+        '<div class="err" id="f-err"></div>' +
+        '<div class="m-actions"><button type="button" class="btn btn-ghost" data-x="back">‹ แก้จำนวน</button><button type="button" class="btn btn-primary" data-x="save">✔ บันทึก</button></div>'
+      const inp = $('#qk-exp', root)
+      root.querySelectorAll('[data-add]').forEach((b) => { b.onclick = () => { inp.value = add(Number(b.dataset.add)) } })
+      root.querySelectorAll('[data-exp]').forEach((b) => { b.onclick = () => { inp.value = b.dataset.exp } })
+      $('[data-x=back]', root).onclick = () => { expVal = inp.value; drawQty() }
+      $('[data-x=save]', root).onclick = () => {
+        if (!inp.value) { $('#f-err', root).textContent = 'กรุณาใส่วันหมดอายุ'; return }
+        expVal = inp.value
+        save('')
+      }
+      setTimeout(() => { try { inp.focus() } catch (e) { /* ไม่เป็นไร */ } }, 60)
+    }
+    let clearArmed = false
+    const clearAll = (btn) => {
+      if (!clearArmed) { clearArmed = true; btn.innerHTML = '⚠️ แตะอีกครั้งเพื่อยืนยันล้าง'; setTimeout(() => { if (btn.isConnected) { clearArmed = false; btn.innerHTML = '🗑 ล้างค่าที่นับ' } }, 3000); return }
+      removeEntries(prevList.map((e) => e.id))
+      toast('🗑 ล้างค่าที่นับของ ' + (name || code) + ' แล้ว (' + prevList.length + ' รายการ)')
+      closeModal()
+      render()
+      if (backToCode && !scanOv) setTimeout(openCodeModal, 80)
     }
     function drawQty() {
       const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'del']
@@ -1006,17 +1187,30 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
         '<div class="qk-disp' + (val ? '' : ' dim') + '" id="qk-disp">' + esc(val || '0') + '</div>' +
         '<div class="qk-grid">' + keys.map((k) => '<button type="button" class="qk-key" data-k="' + k + '">' + (k === 'del' ? '⌫' : k) + '</button>').join('') + '</div>' +
         '<div class="err" id="f-err"></div>' +
-        '<div class="m-actions"><button type="button" class="btn btn-ghost" data-x="no">ยกเลิก</button><button type="button" class="btn btn-primary" data-x="ok">' + (reasons ? 'ตกลง ›' : '✔ ตกลง') + '</button></div>'
+        (CFG.QC_REASONS ? '<button type="button" class="qk-qc" data-x="qc">⚠️ ของไม่ได้คุณภาพ — ใส่เหตุผล</button>' : '') +
+        (repeat
+          ? '<div class="qk-rep-h">🔔 สินค้านี้บันทึกไปแล้ววันนี้ <b>' + fmtNum(sumToday) + '</b> (' + prevList.length + ' ครั้ง) — ใส่จำนวนแล้วเลือก</div>' +
+            '<div class="qk-choices">' +
+            '<button type="button" class="qk-ch" data-x="replace"><b>🔁 แทนที่ค่าเดิม</b><small id="qk-pv-rep"></small></button>' +
+            '<button type="button" class="qk-ch main" data-x="add"><b>➕ บวกเพิ่ม</b><small id="qk-pv-add"></small></button></div>' +
+            '<div class="m-actions"><button type="button" class="btn qk-cancel" data-x="no">✖ ยกเลิก (สแกนผิด)</button><button type="button" class="btn btn-ghost qk-clr" data-x="clear">🗑 ล้างค่าที่นับ</button></div>'
+          : '<div class="m-actions"><button type="button" class="btn qk-cancel" data-x="no">✖ ยกเลิก (สแกนผิด)</button><button type="button" class="btn btn-primary" data-x="ok">' + (reasons ? 'ตกลง ›' : '✔ ตกลง') + '</button></div>')
       root.querySelectorAll('.qk-key').forEach((b) => { b.onclick = () => press(b.dataset.k) })
       $('[data-x=no]', root).onclick = closeModal
-      $('[data-x=ok]', root).onclick = ok
+      if (CFG.QC_REASONS) $('[data-x=qc]', root).onclick = okQc
+      if (repeat) {
+        $('[data-x=replace]', root).onclick = () => ok('replace')
+        $('[data-x=add]', root).onclick = () => ok('add')
+        $('[data-x=clear]', root).onclick = (e) => clearAll(e.currentTarget)
+        previewChoices()
+      } else $('[data-x=ok]', root).onclick = () => ok()
     }
     drawQty()
     sh.addEventListener('keydown', (e) => {
-      if (e.target && e.target.tagName === 'INPUT') return
+      if (e.target && e.target.tagName === 'INPUT') { if (e.key === 'Enter' && $('[data-x=save]', root)) { e.preventDefault(); $('[data-x=save]', root).click() } return }
       if (/^[0-9]$/.test(e.key) || e.key === '.') { e.preventDefault(); press(e.key) }
       else if (e.key === 'Backspace') { e.preventDefault(); press('del') }
-      else if (e.key === 'Enter') { e.preventDefault(); if ($('[data-x=ok]', root)) ok() }
+      else if (e.key === 'Enter') { e.preventDefault(); if ($('[data-x=save]', root)) $('[data-x=save]', root).click(); else if ($('[data-x=ok]', root)) ok(); else if ($('[data-x=add]', root)) ok('add') }
     })
     try { sh.focus() } catch (e) { /* ไม่เป็นไร */ }
   }
@@ -1283,11 +1477,15 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
   function exportExcel() {
     const list = myEntries().slice().reverse()
     if (!list.length) { toast('ไม่มีรายการให้ส่งออก', 'err'); return }
-    const heads = ['วันที่', 'เวลา', 'สาขา', 'ผู้บันทึก', 'รหัสสินค้า', 'ชื่อสินค้า', 'Packsize', 'จำนวน', CFG.NOTE_HEAD]
-    const rows = list.map((e) => [e.date, e.time, e.branch, e.user, e.code, e.name, e.pack || '', e.qty, e.note])
-    const name = (CFG.SHEET + '_' + SESSION_BRANCH().name + '_' + selDate).replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, '_') + '.xlsx'
+    const X = !!CFG.EXPIRY
+    if (X) list.reverse()
+    const heads = X ? ['รหัสสินค้า', 'ชื่อสินค้า', 'Packsize', 'จำนวน', 'วันหมดอายุ', 'เหลือ (วัน)', 'สถานะ', 'สาขา', 'ผู้บันทึก', 'บันทึกเมื่อ', CFG.NOTE_HEAD]
+      : ['วันที่', 'เวลา', 'สาขา', 'ผู้บันทึก', 'รหัสสินค้า', 'ชื่อสินค้า', 'Packsize', 'จำนวน', CFG.NOTE_HEAD]
+    const rows = X ? list.map((e) => { const s = expState(e.exp); return [e.code, e.name, e.pack || '', e.qty, e.exp || '', s.d == null ? '' : s.d, s.label, e.branch, e.user, e.date + ' ' + e.time, e.note] })
+      : list.map((e) => [e.date, e.time, e.branch, e.user, e.code, e.name, e.pack || '', e.qty, e.note])
+    const name = (CFG.SHEET + '_' + SESSION_BRANCH().name + '_' + (X ? todayKey() : RET ? (selDate === 'pending' ? 'รอส่ง_' + todayKey() : selDate) : selDate)).replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, '_') + '.xlsx'
     try {
-      const url = URL.createObjectURL(buildXlsx(heads, rows, [12, 8, 16, 14, 16, 36, 12, 10, 30], CFG.SHEET))
+      const url = URL.createObjectURL(buildXlsx(heads, rows, X ? [14, 36, 12, 9, 13, 11, 18, 16, 14, 17, 26] : [12, 8, 16, 14, 16, 36, 12, 10, 30], CFG.SHEET))
       const a = document.createElement('a')
       a.href = url; a.download = name; a.style.display = 'none'
       document.body.appendChild(a); a.click(); a.remove()
@@ -1296,8 +1494,97 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     } catch (e) { toast('ส่งออกไฟล์ไม่สำเร็จ: ' + e.message, 'err', 4500) }
   }
   const SESSION_BRANCH = () => branchById(SESSION.branchId)
+  /* ---------- สรุปของในร้าน = นับสต๊อกล่าสุด + รับเข้า (หลังเวลาส่งผลนับ) ---------- */
+  async function openStoreSummary() {
+    if (!SYNC_URL) { toast('ยังไม่ได้ตั้งค่า SYNC_URL', 'err'); return }
+    toast('กำลังดึงผลนับสต๊อก ยอด SAP และทะเบียนวันหมดอายุ…', 'ok', 8000)
+    let d
+    try {
+      const res = await fetch(SYNC_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'storeSummary', branch: SESSION_BRANCH().name }) })
+      const j = JSON.parse(await res.text())
+      if (!j.ok) throw new Error(j.message || 'ดึงข้อมูลไม่สำเร็จ')
+      d = j.data
+    } catch (e) { toast('ดึงข้อมูลไม่สำเร็จ: ' + (navigator.onLine === false ? 'ไม่มีอินเทอร์เน็ต' : e.message), 'err', 4000); return }
+    if (!d || (!d.count && !d.sap)) { toast('ยังไม่มีผลนับสต๊อกหรือยอด SAP ของสาขานี้', 'err', 4000); return }
+    const pd = (n) => (n < 10 ? '0' : '') + n
+    const dt = (iso) => { const x = new Date(iso); return x.getDate() + '/' + (x.getMonth() + 1) + '/' + x.getFullYear() + ' ' + pd(x.getHours()) + ':' + pd(x.getMinutes()) }
+    const dk = (k) => { const p = String(k).split('-'); return p.length === 3 ? Number(p[2]) + '/' + Number(p[1]) + '/' + String(p[0]).slice(2) : k }
+    const r3 = (x) => Math.round(x * 1000) / 1000
+    const SAPSET = new Set((CFG.STORE_SAP_CODES || []).map((c) => String(c).toUpperCase()))
+    const m = new Map()
+    const get = (c, name, pack, grp) => {
+      let x = m.get(c)
+      if (!x) { const p = products[c]; x = { code: c, name: name || (p ? p[0] : ''), pack: pack || (p ? p[1] : ''), grp: grp, base: null, recv: 0, lots: [] }; m.set(c, x) }
+      if (!x.name && name) x.name = name
+      if (!x.pack && pack) x.pack = pack
+      return x
+    }
+    if (d.count) d.count.rows.forEach((r) => { if (!SAPSET.has(r.sku) && r.counted != null) get(r.sku, r.name, r.pack, 'cnt').base = r.counted })
+    ;(d.received || []).forEach((r) => { if (!SAPSET.has(r.code)) get(r.code, r.name, r.pack, 'cnt').recv = r.qty })
+    if (d.sap) {
+      d.sap.items.forEach((r) => { if (SAPSET.has(r.sku)) get(r.sku, r.name, r.pack, 'sap').base = r.qty })
+      ;(d.receivedSap || []).forEach((r) => { if (SAPSET.has(r.code)) get(r.code, r.name, r.pack, 'sap').recv = r.qty })
+    }
+    ;(d.expiry || []).forEach((e) => {
+      const dl = daysLeft(e.exp)
+      if (dl == null || isNaN(dl) || dl > WARN) return
+      get(e.code, e.name, e.pack, SAPSET.has(e.code) ? 'sap' : 'oth').lots.push({ qty: e.qty, exp: e.exp, dl: dl })
+    })
+    const all = Array.from(m.values()).sort((a, b) => (a.code < b.code ? -1 : 1))
+    all.forEach((x) => { x.total = r3((x.base || 0) + x.recv); x.lots.sort((a, b) => a.exp.localeCompare(b.exp)) })
+    const lotTxt = (x) => x.lots.map((l) => fmtNum(l.qty) + ' หมด ' + dk(l.exp) + (l.dl < 0 ? ' (หมดแล้ว)' : l.dl === 0 ? ' (วันนี้)' : ' (' + l.dl + ' วัน)')).join(', ')
+    const nExp = all.filter((x) => x.lots.length).length
+    const sapTxt = d.sap ? dk(d.sap.date) + (d.sap.src === 'base' ? ' (ฐานวันนี้)' : ' (รอบที่ส่งล่าสุด)') : 'ไม่มี'
+    window.PrintKit.open({
+      name: 'สรุปของในร้าน',
+      options: [['all', 'ทุกรายการ'], ['exp', '⚠️ เฉพาะที่ใกล้หมดอายุ ≤' + WARN + ' วัน'], ['moved', 'เฉพาะที่มีรับเข้าหลังนับ']],
+      build: (opt) => {
+        const pick = (x) => (opt === 'exp' ? x.lots.length > 0 : opt === 'moved' ? x.recv > 0 : true)
+        const cnt = all.filter((x) => x.grp === 'cnt' && pick(x))
+        const sap = all.filter((x) => x.grp === 'sap' && pick(x) && (x.total > 0 || (opt === 'exp' && x.lots.length)))
+        const oth = all.filter((x) => x.grp === 'oth' && pick(x))
+        let n = 0
+        const row = (x) => ({ hl: x.lots.length > 0, cells: [++n, x.code, x.name || '(ไม่มีในฐานสินค้า)', x.pack, x.base == null ? '-' : fmtNum(x.base), x.recv ? '+' + fmtNum(x.recv) : '', x.base == null && !x.recv ? '-' : fmtNum(x.total), lotTxt(x)] })
+        const rows = []
+        if (cnt.length) rows.push({ sec: '🥬 สินค้านับทุกวัน — ผลนับสต๊อก + รับเข้าหลังนับ (' + cnt.length + ')' }, ...cnt.map(row))
+        if (sap.length) rows.push({ sec: '🧊 แช่แข็ง / ของแห้ง — ยอด SAP ' + sapTxt + ' + รับเข้าหลังนำเข้า · ไม่แสดงตัวที่เป็น 0 (' + sap.length + ')' }, ...sap.map(row))
+        if (oth.length) rows.push({ sec: '📅 อื่น ๆ ในทะเบียนวันหมดอายุ (' + oth.length + ')' }, ...oth.map(row))
+        const items = cnt.concat(sap, oth)
+        return {
+          kicker: 'STORE STOCK SUMMARY', title: 'สรุปของในร้าน', sub: 'สาขา' + SESSION_BRANCH().name + (opt === 'exp' ? ' · สินค้าใกล้หมดอายุ ต้องตีคืนคลัง' : ' · นับสต๊อก + ยอด SAP (แช่แข็ง/ของแห้ง) + รับเข้า'),
+          meta: [['สาขา', SESSION_BRANCH().name], ['นับสต๊อกล่าสุด (ส่งผล)', d.count ? dt(d.count.submittedAt) + (d.count.by ? ' โดย ' + d.count.by : '') : 'ยังไม่มี'], ['ยอด SAP แช่แข็ง/ของแห้ง', sapTxt], ['⚠️ ใกล้หมดอายุ ≤' + WARN + ' วัน', nExp + ' รหัส']],
+          cols: [{ h: 'ลำดับ', cls: 'c', w: '5%' }, { h: 'รหัสสินค้า', cls: 'code', w: '10%' }, { h: 'ชื่อสินค้า' }, { h: 'หน่วย', w: '9%' }, { h: 'นับ / SAP', cls: 'n', w: '8%' }, { h: 'รับเข้า (+)', cls: 'n', w: '8%' }, { h: 'คงเหลือ', cls: 'n', w: '8%' }, { h: 'ใกล้หมดอายุ (≤' + WARN + ' วัน)', w: '22%' }],
+          rows: rows,
+          foot: ['', '', 'รวม ' + items.length + ' รายการ', '', '', '+' + fmtNum(r3(items.reduce((a, x) => a + x.recv, 0))), '', nExp ? '⚠️ ' + nExp + ' รหัสต้องตีคืนคลัง' : ''],
+          noteBox: 'หมายเหตุ:', sign: ['ผู้จัดทำ', 'ผู้ตรวจสอบ', 'ผู้จัดการสาขา'], empty: 'ไม่มีรายการ', footRight: 'แอป' + CFG.TITLE
+        }
+      }
+    })
+  }
+  function printExpiry() {
+    const nowTxt = (() => { const d = new Date(); return d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear() })()
+    window.PrintKit.open({
+      name: 'พิมพ์ทะเบียนวันหมดอายุ',
+      options: [['all', 'ทั้งหมด (เรียงตามวันหมดอายุ)'], ['soon', 'ใกล้หมดอายุ ≤' + WARN + ' วัน + หมดอายุแล้ว'], ['gone', 'เฉพาะที่หมดอายุแล้ว']],
+      build: (m) => {
+        const all = myEntries()
+        const list = all.filter((e) => { const d = daysLeft(e.exp); return m === 'all' || (m === 'soon' ? d != null && d <= WARN : d != null && d < 0) })
+        const soon = all.filter((e) => { const d = daysLeft(e.exp); return d != null && d >= 0 && d <= WARN }).length
+        const gone = all.filter((e) => { const d = daysLeft(e.exp); return d != null && d < 0 }).length
+        return {
+          kicker: 'EXPIRY REGISTER', title: 'ทะเบียนสินค้าวันหมดอายุ', sub: 'สาขา' + SESSION_BRANCH().name + (m === 'soon' ? ' · ใกล้หมดอายุ / หมดอายุแล้ว' : m === 'gone' ? ' · หมดอายุแล้ว' : ''),
+          meta: [['สาขา', SESSION_BRANCH().name], ['ข้อมูล ณ วันที่', nowTxt], ['ผู้พิมพ์', SESSION.user], ['ในทะเบียน', all.length + ' รายการ · ใกล้หมด ' + soon + ' · หมดแล้ว ' + gone]],
+          cols: [{ h: 'ลำดับ', cls: 'c', w: '6%' }, { h: 'รหัสสินค้า', cls: 'code', w: '11%' }, { h: 'ชื่อสินค้า' }, { h: 'หน่วย', w: '11%' }, { h: 'จำนวน', cls: 'n', w: '7%' }, { h: 'วันหมดอายุ', cls: 'c', w: '11%' }, { h: 'เหลือ (วัน)', cls: 'n', w: '8%' }, { h: 'สถานะ', cls: 'c', w: '13%' }, { h: 'การจัดการ', w: '13%' }],
+          rows: list.map((e, i) => { const s = expState(e.exp); return { hl: s.d != null && s.d <= WARN, cells: [i + 1, e.code, e.name || '(ไม่มีในฐานสินค้า)', e.pack, fmtNum(e.qty), fmtExp(e.exp), s.d == null ? '' : s.d, s.d == null ? '-' : s.d < 0 ? 'หมดอายุแล้ว' : s.d === 0 ? 'หมดอายุวันนี้' : s.d <= 7 ? 'ใกล้หมดอายุ' : 'ปกติ', ''] } }),
+          foot: ['', '', 'รวม ' + list.length + ' รายการ', '', fmtNum(list.reduce((a, e) => a + e.qty, 0)), '', '', '', ''],
+          noteBox: 'หมายเหตุ:', sign: ['ผู้ตรวจนับ', 'ผู้ตรวจสอบ', 'ผู้จัดการสาขา'], empty: 'ไม่มีรายการ', footRight: 'แอป' + CFG.TITLE
+        }
+      }
+    })
+  }
   /* ---------- พิมพ์ใบรับเข้า / ใบตีคืน ---------- */
   function printEntries() {
+    if (CFG.EXPIRY) return printExpiry()
     const isRet = CFG.MODE === 'return'
     const dTH = (k) => { const p = String(k).split('-'); return p.length === 3 ? Number(p[2]) + '/' + Number(p[1]) + '/' + p[0] : k }
     window.PrintKit.open({
@@ -1309,7 +1596,7 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
         const users = Array.from(new Set(list.map((e) => e.user).filter(Boolean))).join(', ')
         const doc = {
           kicker: isRet ? 'GOODS RETURN' : 'GOODS RECEIVING', title: 'ใบ' + CFG.SHEET + 'สินค้า', sub: 'สาขา' + SESSION_BRANCH().name,
-          meta: [['สาขา', SESSION_BRANCH().name], ['วันที่', dTH(selDate)], ['ผู้บันทึก', users || SESSION.user], ['จำนวน', list.length + ' รายการ · รวม ' + fmtNum(total) + ' ชิ้น']],
+          meta: [['สาขา', SESSION_BRANCH().name], ['วันที่', RET ? (selDate === 'pending' ? dTH(todayKey()) + ' (ยังไม่ส่งคืน)' : dTH(selDate)) : dTH(selDate)], ['ผู้บันทึก', users || SESSION.user], ['จำนวน', list.length + ' รายการ · รวม ' + fmtNum(total) + ' ชิ้น']],
           noteBox: 'หมายเหตุ:',
           sign: isRet ? ['ผู้ส่งคืน (สาขา)', 'ผู้รับคืน / ขนส่ง', 'ผู้อนุมัติ'] : ['ผู้ส่งสินค้า', 'ผู้รับสินค้า', 'ผู้ตรวจสอบ'],
           empty: 'ยังไม่มีรายการ' + CFG.SHEET, footRight: 'แอป' + CFG.TITLE
@@ -1421,33 +1708,39 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     lg.pin = ''
     lsSet(K.session, { branchId: b.id, user: name, date: todayKey() })
     saveSettings({ user: name, lastBranch: b.id })
+    if (window.__pushRecentName) window.__pushRecentName(b.id, name)
     SESSION = getSession()
     view = 'main'
-    selDate = todayKey()
+    selDate = defSel()
     render()
     syncEntries()
     toast('ยินดีต้อนรับ ' + name + ' · สาขา' + b.name)
   }
   function viewMain() {
+    if (CFG.EXPIRY) return viewMainExp()
     const dates = myDates()
-    if (dates.indexOf(selDate) < 0) selDate = todayKey()
+    if (dates.indexOf(selDate) < 0) selDate = defSel()
     const isToday = selDate === todayKey()
     const list = myEntries()
     const total = list.reduce((a, e) => a + e.qty, 0)
     const nCodes = new Set(list.map((e) => e.code)).size
-    const dLabel = (d) => (d === todayKey() ? 'วันนี้' : d.slice(8, 10) + '/' + d.slice(5, 7))
+    const dLabel = (d) => (RET ? (d === 'pending' ? '⏳ รอส่งคืนคลัง (' + myEntries('pending').length + ')' : '✅ ส่งแล้ว ' + d.slice(8, 10) + '/' + d.slice(5, 7)) : d === todayKey() ? 'วันนี้' : d.slice(8, 10) + '/' + d.slice(5, 7))
     setTop(CFG.TITLE, 'สาขา' + SESSION_BRANCH().name + ' · ' + SESSION.user, true, 'main')
     $('#view').innerHTML =
-      '<div class="stats s3 anim"><div class="stat"><b>' + list.length + '</b><span>รายการ' + (isToday ? 'วันนี้' : '') + '</span></div><div class="stat ok"><b>' + fmtNum(total) + '</b><span>' + esc(CFG.TOTAL_LABEL) + '</span></div><div class="stat"><b>' + nCodes + '</b><span>รหัสสินค้า</span></div></div>' +
+      '<div class="stats s3 anim"><div class="stat"><b>' + list.length + '</b><span>รายการ' + (RET ? (selDate === 'pending' ? 'รอส่งคืน' : 'ที่ส่งแล้ว') : isToday ? 'วันนี้' : '') + '</span></div><div class="stat ok"><b>' + fmtNum(total) + '</b><span>' + esc(CFG.TOTAL_LABEL) + '</span></div><div class="stat"><b>' + nCodes + '</b><span>รหัสสินค้า</span></div></div>' +
       '<div class="stack">' +
       '<button type="button" class="act primary" data-act="scan"><span class="ic">📷</span><span class="tx"><b>สแกน QR สินค้า</b><small>เล็งที่ QR แล้วใส่จำนวน' + esc(CFG.SHEET) + '</small></span><span class="chev">›</span></button>' +
-      '<button type="button" class="act" data-act="code"><span class="ic">🔢</span><span class="tx"><b>กรอกรหัสเอง</b><small>พิมพ์แค่ตัวเลขบางส่วน แล้วเลือกรหัสจากรายการ</small></span><span class="chev">›</span></button></div>' +
+      '<button type="button" class="act" data-act="code"><span class="ic">🔢</span><span class="tx"><b>กรอกรหัสเอง</b><small>พิมพ์แค่ตัวเลขบางส่วน แล้วเลือกรหัสจากรายการ</small></span><span class="chev">›</span></button>' +
+      (CFG.MODE === 'receive' ? '<button type="button" class="act" data-act="store-sum"><span class="ic">📦</span><span class="tx"><b>สรุปของในร้าน</b><small>นับสต๊อก + ยอด SAP แช่แข็ง/ของแห้ง + รับเข้า · ⚠️ ของใกล้หมดอายุ</small></span><span class="chev">›</span></button>' : '') +
+      '</div>' +
+      (RET && selDate === 'pending' ? '<div class="ret-note">รายการจะอยู่ในรอบนี้จนกว่าจะกด <b>📤 ส่งคืนคลัง</b> · ระหว่างรอ แอปนับสต๊อกจะใส่เหตุผล "รอตีคืนคลัง" ให้อัตโนมัติ</div>' : '') +
       (dates.length > 1 ? '<div class="chips" style="margin:14px 0 0">' + dates.map((d) => '<button type="button" class="chip' + (d === selDate ? ' on' : '') + '" data-act="pick-date" data-d="' + esc(d) + '">' + esc(dLabel(d)) + '</button>').join('') + '</div>' : '') +
       '<div class="sync-line"></div>' +
-      '<div class="sec-row"><div class="sec">รายการ' + esc(CFG.SHEET) + (isToday ? 'วันนี้' : 'วันที่ ' + esc(selDate)) + '</div>' + (list.length ? '<button type="button" class="clr" data-act="clear-day">🧹 ล้างรายการ</button>' : '') + '</div>' +
+      '<div class="sec-row"><div class="sec">รายการ' + esc(CFG.SHEET) + (RET ? (selDate === 'pending' ? ' — รอส่งคืนคลัง' : ' — ส่งคืนคลังแล้ว ' + esc(selDate.slice(8, 10) + '/' + selDate.slice(5, 7))) : isToday ? 'วันนี้' : 'วันที่ ' + esc(selDate)) + '</div>' + (list.length ? (RET && selDate !== 'pending' ? '<button type="button" class="clr" data-act="unsend">↩ ย้อนเป็นรอส่ง</button>' : '<button type="button" class="clr" data-act="clear-day">🧹 ล้างรายการ</button>') : '') + '</div>' +
       (list.length ? list.map((e) =>
-        '<div class="ent"><div class="info"><div class="nm">' + esc(e.name || e.code) + '</div><div class="sub">' + esc(e.code) + ' · ' + esc(e.time) + (e.note ? ' · ' + esc(e.note) : '') + '</div></div>' +
+        '<div class="ent' + (isQc(e) ? ' qc' : '') + '"><div class="info"><div class="nm">' + esc(e.name || e.code) + '</div><div class="sub">' + esc(e.code) + ' · ' + (RET ? esc(e.date.slice(8, 10) + '/' + e.date.slice(5, 7)) + ' ' : '') + esc(e.time) + (e.note ? ' · ' + esc(e.note) : '') + '</div></div>' +
         '<div class="qty">' + fmtNum(e.qty) + '</div>' +
+        (CFG.MOVE_TO && isQc(e) ? (isMoved(e) ? '<span class="mv-done" title="ส่งไปตีคืนแล้ว">↩️✓</span>' : '<button type="button" class="ib mv" data-act="move" data-id="' + esc(e.id) + '" aria-label="ส่งไปตีคืน" title="ส่งไปแอปตีคืน">↩️</button>') : '') +
         '<button type="button" class="ib" data-act="edit" data-id="' + esc(e.id) + '" aria-label="แก้ไข">✎</button>' +
         '<button type="button" class="ib" data-act="del" data-id="' + esc(e.id) + '" aria-label="ลบ">🗑</button></div>').join('')
         : '<div class="emp">ยังไม่มีรายการ — กด "สแกน QR" หรือ "กรอกรหัสเอง" เพื่อเริ่ม</div>')
@@ -1455,7 +1748,66 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     dock.hidden = false
     dock.innerHTML =
       '<button type="button" class="btn btn-secondary" data-act="print"' + (list.length ? '' : ' disabled') + '>🖨️ พิมพ์</button>' +
-      '<button type="button" class="btn grow btn-primary" data-act="xlsx"' + (list.length ? '' : ' disabled') + '>📗 ส่งออก Excel (' + list.length + ' รายการ)</button>'
+      (RET && selDate === 'pending'
+        ? '<button type="button" class="btn btn-secondary" data-act="xlsx"' + (list.length ? '' : ' disabled') + '>📗 Excel</button><button type="button" class="btn grow btn-primary" data-act="send-ret"' + (list.length ? '' : ' disabled') + '>📤 ส่งคืนคลัง (' + list.length + ')</button>'
+        : '<button type="button" class="btn grow btn-primary" data-act="xlsx"' + (list.length ? '' : ' disabled') + '>📗 ส่งออก Excel (' + list.length + ' รายการ)</button>')
+    updateSyncUi()
+  }
+  let expFilter = 'all'
+  let expQ = ''
+  const expSoon = (e) => { const d = daysLeft(e.exp); return d != null && d >= 0 && d <= WARN }
+  const expGone = (e) => { const d = daysLeft(e.exp); return d != null && d < 0 }
+  const lotsOfCode = (code) => entries.filter((e) => SESSION && e.branchId === SESSION.branchId && e.code === code).sort((a, b) => String(a.exp || '9999').localeCompare(String(b.exp || '9999')))
+  // ทะเบียน: 1 การ์ดต่อสินค้า แยกล็อตตามวันหมดอายุ
+  function expListHtml(all) {
+    let list = expFilter === 'soon' ? all.filter(expSoon) : expFilter === 'gone' ? all.filter(expGone) : all
+    const q = expQ.trim().toLowerCase(), qd = q.replace(/\D/g, '')
+    if (q) list = list.filter((e) => e.code.toLowerCase().indexOf(q) >= 0 || (qd && e.code.replace(/\D/g, '').indexOf(qd) >= 0) || String(e.name || '').toLowerCase().indexOf(q) >= 0)
+    const g = new Map()
+    list.forEach((e) => { const x = g.get(e.code) || { code: e.code, name: e.name, pack: e.pack, lots: [] }; x.lots.push(e); g.set(e.code, x) })
+    const gs = Array.from(g.values())
+    gs.forEach((x) => { x.lots.sort((a, b) => String(a.exp || '9999').localeCompare(String(b.exp || '9999'))); x.first = x.lots[0].exp || '9999'; x.total = Math.round(x.lots.reduce((a, e) => a + e.qty, 0) * 1000) / 1000 })
+    gs.sort((a, b) => a.first.localeCompare(b.first))
+    if (!gs.length) return '<div class="emp">' + (q ? 'ไม่พบ "' + esc(expQ) + '"' : all.length ? 'ไม่มีรายการในกลุ่มนี้' : 'ยังไม่มีสินค้าในทะเบียน — กด "สแกน QR" หรือ "กรอกรหัสเอง" เพื่อเริ่ม') + '</div>'
+    return gs.map((x) => {
+      const w = expState(x.lots[0].exp)
+      return '<div class="xg ' + w.cls + '"><div class="xg-h"><div class="info"><div class="nm">' + esc(x.name || x.code) + '</div><div class="sub">' + esc(x.code) + (x.pack ? ' · ' + esc(x.pack) : '') + ' · รวม <b>' + fmtNum(x.total) + '</b>' + (x.lots.length > 1 ? ' · ' + x.lots.length + ' ล็อต' : '') + '</div></div>' +
+        '<button type="button" class="ib" data-act="exp-add" data-code="' + esc(x.code) + '" aria-label="เพิ่มล็อต" title="เพิ่ม / แก้ล็อต">＋</button>' +
+        '<button type="button" class="ib" data-act="del-code" data-code="' + esc(x.code) + '" aria-label="ลบทุกล็อต" title="ลบทุกล็อตของสินค้านี้">🗑</button></div>' +
+        x.lots.map((e) => {
+          const s = expState(e.exp)
+          return '<div class="xl"><b class="xq">' + fmtNum(e.qty) + '</b><span class="xe">หมด ' + esc(fmtExp(e.exp)) + '</span><span class="xb ' + s.cls + '">' + esc(s.label) + '</span>' +
+            '<button type="button" class="ib sm" data-act="edit" data-id="' + esc(e.id) + '" aria-label="แก้ไข">✎</button>' +
+            '<button type="button" class="ib sm" data-act="del" data-id="' + esc(e.id) + '" aria-label="ลบล็อตนี้">✕</button></div>'
+        }).join('') + '</div>'
+    }).join('')
+  }
+  function viewMainExp() {
+    const all = myEntries()
+    const soon = all.filter(expSoon)
+    const gone = all.filter(expGone)
+    const nCodes = new Set(all.map((e) => e.code)).size
+    setTop(CFG.TITLE, 'สาขา' + SESSION_BRANCH().name + ' · ' + SESSION.user, true, 'main')
+    $('#view').innerHTML =
+      '<div class="stats s3 anim"><div class="stat"><b>' + nCodes + '</b><span>สินค้าในทะเบียน (' + all.length + ' ล็อต)</span></div>' +
+      '<div class="stat x-warn-s"><b>' + soon.length + '</b><span>ใกล้หมดอายุ (≤' + WARN + ' วัน)</span></div>' +
+      '<div class="stat x-bad-s"><b>' + gone.length + '</b><span>หมดอายุแล้ว</span></div></div>' +
+      '<div class="stack">' +
+      '<button type="button" class="act primary" data-act="scan"><span class="ic">📷</span><span class="tx"><b>สแกน QR สินค้า</b><small>ใส่จำนวน แล้วใส่วันหมดอายุ (วันเดิม = แทนที่จำนวน)</small></span><span class="go">›</span></button>' +
+      '<button type="button" class="act" data-act="code"><span class="ic">🔢</span><span class="tx"><b>กรอกรหัสเอง</b><small>พิมพ์แค่ตัวเลขบางส่วน แล้วเลือกรหัสจากรายการ</small></span><span class="go">›</span></button>' +
+      '</div>' +
+      '<div class="xsearch"><input id="exp-q" type="search" placeholder="🔍 ค้นหารหัส / ชื่อสินค้า เพื่อแก้หรือลบ" value="' + esc(expQ) + '" autocomplete="off"></div>' +
+      '<div class="chips" style="margin:10px 0 0">' + [['all', 'ทั้งหมด ' + all.length], ['soon', '⏳ ใกล้หมด ' + soon.length], ['gone', '⛔ หมดอายุแล้ว ' + gone.length]].map((c) => '<button type="button" class="chip' + (expFilter === c[0] ? ' on' : '') + '" data-act="exp-filter" data-f="' + c[0] + '">' + c[1] + '</button>').join('') + '</div>' +
+      '<div class="sync-line"></div>' +
+      '<div class="sec-row"><div class="sec">ทะเบียนสินค้า (แยกล็อตตามวันหมดอายุ)</div>' + (gone.length ? '<button type="button" class="clr" data-act="clear-expired">🧹 ล้างที่หมดอายุแล้ว</button>' : '') + '</div>' +
+      '<div id="exp-list">' + expListHtml(all) + '</div>'
+    const qi = $('#exp-q')
+    if (qi) qi.oninput = () => { expQ = qi.value; const l = $('#exp-list'); if (l) l.innerHTML = expListHtml(myEntries()) }
+    const dock = $('#dock')
+    dock.hidden = false
+    dock.innerHTML =
+      '<button type="button" class="btn btn-secondary" data-act="print"' + (all.length ? '' : ' disabled') + '>🖨️ พิมพ์</button>' +
+      '<button type="button" class="btn grow btn-primary" data-act="xlsx"' + (all.length ? '' : ' disabled') + '>📗 ส่งออก Excel (' + all.length + ' ล็อต)</button>'
     updateSyncUi()
   }
   function render() {
@@ -1675,17 +2027,51 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     }
     else if (act === 'xlsx') exportExcel()
     else if (act === 'print') printEntries()
+    else if (act === 'store-sum') openStoreSummary()
+    else if (act === 'move') {
+      const e = entries.find((x) => x.id === id)
+      if (e) confirmBox('↩️ ส่งไปแอปตีคืน', 'ส่ง ' + (e.name || e.code) + ' × ' + fmtNum(e.qty) + ' ไปบันทึกในแอปตีคืน (เหตุผล: คุณภาพไม่ได้มาตรฐาน)? รายการรับเข้ายังอยู่ แต่จะมีเครื่องหมายว่าส่งแล้ว', 'ส่งไปตีคืน', () => { moveToReturn(e) })
+    }
+    else if (act === 'exp-add') openQuickQty(el.getAttribute('data-code'))
+    else if (act === 'del-code') {
+      const c = el.getAttribute('data-code'), ls = lotsOfCode(c)
+      if (ls.length) confirmBox('ลบทุกล็อต', 'ลบ ' + (ls[0].name || c) + ' ทั้งหมด ' + ls.length + ' ล็อต ออกจากทะเบียน? (ลบจากทุกเครื่อง · ในชีตเก็บสำเนาไว้ที่แท็บ ถังขยะ)', 'ลบทั้งหมด', () => { removeEntries(ls.map((e) => e.id)); render() })
+    }
+    else if (act === 'exp-filter') { expFilter = el.getAttribute('data-f'); render() }
+    else if (act === 'clear-expired') {
+      const g = myEntries().filter((e) => { const d = daysLeft(e.exp); return d != null && d < 0 })
+      confirmBox('🧹 ล้างสินค้าที่หมดอายุแล้ว', 'ลบ ' + g.length + ' รายการที่หมดอายุแล้วออกจากทะเบียน (ทุกเครื่องและในชีต)?', 'ลบออก', () => { removeEntries(g.map((x) => x.id)); toast('ล้างแล้ว ' + g.length + ' รายการ'); render() })
+    }
     else if (act === 'edit') { const e = entries.find((x) => x.id === id); if (e) openEntryModal(e.code, e) }
     else if (act === 'del') {
       const e = entries.find((x) => x.id === id)
-      if (e) confirmBox('ลบรายการ', 'ลบ ' + (e.name || e.code) + ' × ' + fmtNum(e.qty) + ' ? (ลบจากทุกเครื่องและในชีตด้วย)', 'ลบ', () => { removeEntries([id]); render() })
+      if (e) confirmBox('ลบรายการ', 'ลบ ' + (e.name || e.code) + ' × ' + fmtNum(e.qty) + ' ? (ลบจากทุกเครื่อง · ในชีตเก็บสำเนาไว้ที่แท็บ ถังขยะ)', 'ลบ', () => { removeEntries([id]); render() })
     }
     else if (act === 'sync-now') { await syncEntries(); if (SY.state === 'ok') toast('ซิงก์แล้ว'); else if (SY.state === 'err') toast(SY.msg, 'err', 3500) }
+    else if (act === 'send-ret') {
+      const list = myEntries('pending')
+      if (!list.length) return
+      const tot = list.reduce((a, e) => a + e.qty, 0)
+      confirmBox('📤 ส่งคืนคลัง', 'ปิดรอบตีคืน ' + list.length + ' รายการ (รวม ' + fmtNum(tot) + ' ชิ้น) เป็น "ส่งคืนคลังแล้ว" วันนี้ แล้วเปิดใบส่งคืนให้พิมพ์ — ข้อมูลยังอยู่ในชีตและดูย้อนหลังได้', 'ส่งคืน + พิมพ์', () => {
+        const d = todayKey()
+        list.forEach((e) => { e.sent = d; e.u = nowT(); SYS.dirty[e.id] = 1 })
+        saveEntries(); saveSys(); scheduleSync(200)
+        selDate = d; render(); toast('ส่งคืนคลังแล้ว ' + list.length + ' รายการ')
+        setTimeout(printEntries, 250)
+      })
+    }
+    else if (act === 'unsend') {
+      const list = myEntries()
+      confirmBox('↩ ย้อนเป็นรอส่ง', 'ย้ายรายการ ' + list.length + ' รายการ กลับไปเป็น "รอส่งคืนคลัง"?', 'ย้อนกลับ', () => {
+        list.forEach((e) => { e.sent = ''; e.u = nowT(); SYS.dirty[e.id] = 1 })
+        saveEntries(); saveSys(); scheduleSync(200); selDate = 'pending'; render()
+      })
+    }
     else if (act === 'clear-day') {
       const list = myEntries()
       if (!list.length) { toast('ไม่มีรายการให้ล้าง'); return }
-      const dl = selDate === todayKey() ? 'วันนี้' : 'วันที่ ' + selDate
-      confirmBox('🧹 ล้างรายการ' + dl, 'ลบรายการ' + CFG.SHEET + dl + ' ของสาขา' + SESSION_BRANCH().name + ' ทั้งหมด ' + list.length + ' รายการ — จะหายจากทุกเครื่องและในชีตด้วย กู้คืนไม่ได้', 'ล้างรายการ', () => { removeEntries(list.map((x) => x.id)); toast('ล้างรายการแล้ว'); render() })
+      const dl = RET ? 'ที่รอส่งคืน' : selDate === todayKey() ? 'วันนี้' : 'วันที่ ' + selDate
+      confirmBox('🧹 ล้างรายการ' + dl, 'ลบรายการ' + CFG.SHEET + dl + ' ของสาขา' + SESSION_BRANCH().name + ' ทั้งหมด ' + list.length + ' รายการ — จะหายจากทุกเครื่อง (ในชีตเก็บสำเนาไว้ที่แท็บ ถังขยะ)', 'ล้างรายการ', () => { removeEntries(list.map((x) => x.id)); toast('ล้างรายการแล้ว'); render() })
     }
   })
 
@@ -1699,9 +2085,51 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
   document.addEventListener('visibilitychange', () => { if (!document.hidden) syncEntries(); else flushBeacon() })
   window.addEventListener('pagehide', flushBeacon)
   window.addEventListener('online', () => syncEntries())
-  if (window.__RC_TEST) window.__RC = { entries: () => entries, products: () => products, matchCodes: matchCodes, printEntries: printEntries, syncEntries: syncEntries, SYS: () => SYS, SRV: () => SRV, PEND: () => PEND, SY: SY, resolveCode: resolveCode, openCodeModal: openCodeModal, buildXlsx: buildXlsx, readXlsx: readXlsx, parseDelimited: parseDelimited, rowsToProducts: rowsToProducts }
+  if (window.__RC_TEST) window.__RC = { entries: () => entries, products: () => products, matchCodes: matchCodes, printEntries: printEntries, openStoreSummary: openStoreSummary, daysLeft: daysLeft, moveToReturn: moveToReturn, openQuickQty: openQuickQty, syncEntries: syncEntries, SYS: () => SYS, SRV: () => SRV, PEND: () => PEND, SY: SY, resolveCode: resolveCode, openCodeModal: openCodeModal, buildXlsx: buildXlsx, readXlsx: readXlsx, parseDelimited: parseDelimited, rowsToProducts: rowsToProducts }
 })()
 
+</script>
+<script>
+/* ชื่อผู้ใช้ล่าสุด สาขาละ 3 ชื่อ (ใช้ร่วมกันทุกแอปในเว็บเดียวกัน) */
+(function () {
+  var K = 'br_recent_names'
+  var esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] }) }
+  function load() { try { return JSON.parse(localStorage.getItem(K) || '{}') || {} } catch (e) { return {} } }
+  window.__pushRecentName = function (bid, n) {
+    n = String(n || '').trim()
+    if (!bid || !n) return
+    var m = load()
+    var a = (m[bid] || []).filter(function (x) { return x !== n })
+    a.unshift(n)
+    m[bid] = a.slice(0, 3)
+    try { localStorage.setItem(K, JSON.stringify(m)) } catch (e) {}
+  }
+  function draw() {
+    var inp = document.getElementById('lg-name'), sel = document.getElementById('lg-branch')
+    if (!inp || !sel) return
+    var box = document.getElementById('lg-recent')
+    if (!box) {
+      box = document.createElement('div'); box.id = 'lg-recent'; box.className = 'rn-chips'
+      var lab = inp.closest('label') || inp.parentNode
+      lab.parentNode.insertBefore(box, lab.nextSibling)
+    }
+    var a = load()[sel.value] || []
+    box.innerHTML = a.length ? '<span>ชื่อล่าสุด' + (sel.value ? '' : '') + ':</span>' + a.map(function (n) { return '<button type="button" class="rn-chip" data-rn="' + esc(n) + '">' + esc(n) + '</button>' }).join('') : ''
+    box.hidden = !a.length
+  }
+  document.addEventListener('change', function (e) { if (e.target && e.target.id === 'lg-branch') setTimeout(draw, 0) })
+  document.addEventListener('click', function (e) {
+    var b = e.target && e.target.closest ? e.target.closest('.rn-chip') : null
+    if (!b) return
+    e.preventDefault()
+    var inp = document.getElementById('lg-name')
+    if (inp) { inp.value = b.getAttribute('data-rn'); inp.dispatchEvent(new Event('input', { bubbles: true })) }
+  }, true)
+  new MutationObserver(function () { if (document.getElementById('lg-name') && !document.getElementById('lg-recent')) draw() }).observe(document.body, { childList: true, subtree: true })
+  var st = document.createElement('style')
+  st.textContent = '.rn-chips{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:-4px 0 12px;font-size:13px;color:#5f7f5f;font-weight:700}.rn-chip{border:1.5px solid #b8dfc8;background:#e8f5ee;color:#145f2f;border-radius:99px;padding:5px 12px;font:inherit;font-weight:800;cursor:pointer;min-height:34px}.rn-chip:active{transform:scale(.96)}'
+  document.head.appendChild(st)
+})()
 </script>
 </body>
 </html>
