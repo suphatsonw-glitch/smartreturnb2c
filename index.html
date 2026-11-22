@@ -485,6 +485,10 @@ input[type='file'] { padding: 8px; font-size: 14px; }
 
 /* มือถือ: ยกแถบเมนูล่างขึ้นจากขอบจอ 1 นิ้ว ไม่ให้จมใต้แถบเบราว์เซอร์/ปุ่มนำทาง */
 @media (pointer: coarse) { .dock { padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px) + 1in) !important; } }
+
+.tools-row { display: flex; gap: 8px; margin: 12px 0 0; } .tools-row .btn { flex: 1; min-height: 42px; font-size: 14.5px; }
+.cd-name { width: 100%; min-height: 46px; margin: 8px 0 4px; border: 1.5px solid #c8ddc8; border-radius: 12px; padding: 8px 12px; font: inherit; font-size: 16px; color: #1a2a1a; background: #f4f8f5; }
+.cd-name:focus { outline: none; border-color: #2d8a52; background: #fff; box-shadow: 0 0 0 3px rgba(45,138,82,.14); }
 </style>
 <style>
 /* ---------- ใบพิมพ์ (PrintKit) ---------- */
@@ -627,6 +631,160 @@ window.PrintKit = (function () {
   return { open: open, close: close, render: render, print: print }
 })()
 </script>
+<style>
+.rk-ov { position: fixed; inset: 0; z-index: 9000; background: rgba(10, 30, 18, 0.5); display: flex; align-items: flex-end; justify-content: center; }
+.rk-box { background: #fff; color: #1a2a1a; width: 100%; max-width: 560px; max-height: 92vh; overflow-y: auto; border-radius: 20px 20px 0 0; padding: 16px 16px calc(18px + env(safe-area-inset-bottom, 0px)); font-family: inherit; }
+@media (min-width: 700px) { .rk-ov { align-items: center; } .rk-box { border-radius: 20px; } }
+.rk-box h3 { margin: 0 0 4px; font-size: 18px; color: #145f2f; } .rk-box .rk-sub { margin: 0 0 12px; font-size: 13.5px; color: #5f7f5f; }
+.rk-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.rk-chips button { border: 1.5px solid #c8ddc8; background: #f4f8f5; color: #145f2f; border-radius: 99px; padding: 6px 12px; font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer; }
+.rk-chips button.on { background: #e8f5ee; border-color: #2d8a52; }
+.rk-dates { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.rk-dates label { display: block; font-size: 13px; font-weight: 700; color: #4a6a4a; }
+.rk-dates input { display: block; width: 100%; margin-top: 4px; min-height: 44px; border: 1.5px solid #c8ddc8; border-radius: 10px; padding: 8px 10px; font: inherit; color: #1a2a1a; background: #f4f8f5; }
+.rk-btn { min-height: 46px; border-radius: 12px; border: 1.5px solid #c8ddc8; background: #fff; color: #145f2f; font: inherit; font-weight: 800; padding: 0 14px; cursor: pointer; }
+.rk-btn.pri { background: linear-gradient(135deg, #2d8a52, #1a6b3c); color: #fff; border: 0; } .rk-btn:disabled { opacity: 0.5; }
+.rk-row { display: flex; gap: 8px; flex-wrap: wrap; } .rk-row .rk-btn { flex: 1; min-width: 96px; }
+.rk-res { margin-top: 12px; } .rk-info { background: #f3f8f4; border: 1px solid #d6e4da; border-radius: 12px; padding: 10px 12px; font-size: 14px; line-height: 1.55; margin-bottom: 10px; }
+.rk-err { background: #fdecea; border: 1px solid #f1b0a8; color: #8e1e12; border-radius: 12px; padding: 10px 12px; font-size: 14px; font-weight: 700; }
+.rk-res select { width: 100%; min-height: 44px; border: 1.5px solid #c8ddc8; border-radius: 10px; padding: 6px 10px; font: inherit; color: #1a2a1a; background: #fff; margin-bottom: 8px; }
+.rk-close { margin-top: 10px; width: 100%; }
+</style>
+<script>
+/* ===== RangeKit: ดึงข้อมูลย้อนหลังตามช่วงวันที่ + ส่งออก Excel / CSV (ใช้ร่วมกันทุกแอป) ===== */
+window.RK = (function () {
+  const pad = (n) => (n < 10 ? '0' : '') + n
+  const dk = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+  const xe = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '')
+  const dTH = (k) => { const p = String(k || '').split('-'); return p.length === 3 ? Number(p[2]) + '/' + Number(p[1]) + '/' + p[0] : String(k || '') }
+  const fname = (s) => String(s).replace(/[\\/:*?"<>|]+/g, '-').replace(/\s+/g, '_')
+  function saveBlob(name, blob) {
+    const url = URL.createObjectURL(blob), a = document.createElement('a')
+    a.href = url; a.download = fname(name); a.style.display = 'none'
+    document.body.appendChild(a); a.click(); a.remove()
+    setTimeout(() => URL.revokeObjectURL(url), 8000)
+  }
+  // CSV: ใส่ BOM ให้ Excel อ่านภาษาไทยถูก
+  function csv(name, heads, rows) {
+    const c = (v) => { v = v == null ? '' : String(v); return /[",\r\n]/.test(v) || /^\s|\s$/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v }
+    const txt = '﻿' + [heads].concat(rows).map((r) => r.map(c).join(',')).join('\r\n')
+    saveBlob(name + '.csv', new Blob([txt], { type: 'text/csv;charset=utf-8' }))
+  }
+  // XLSX แบบไม่ต้องใช้ไลบรารี (zip store)
+  const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0 } return t })()
+  const crc32 = (u) => { let c = 0xffffffff; for (let i = 0; i < u.length; i++) c = CRC[(c ^ u[i]) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0 }
+  function zip(files) {
+    const enc = new TextEncoder(), parts = [], cen = []
+    let off = 0
+    files.forEach((f) => {
+      const nm = enc.encode(f.name), data = enc.encode(f.data), crc = crc32(data)
+      const h = new DataView(new ArrayBuffer(30))
+      h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true)
+      h.setUint32(14, crc, true); h.setUint32(18, data.length, true); h.setUint32(22, data.length, true); h.setUint16(26, nm.length, true)
+      parts.push(new Uint8Array(h.buffer), nm, data)
+      const c = new DataView(new ArrayBuffer(46))
+      c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true)
+      c.setUint32(16, crc, true); c.setUint32(20, data.length, true); c.setUint32(24, data.length, true); c.setUint16(28, nm.length, true); c.setUint32(42, off, true)
+      cen.push(new Uint8Array(c.buffer), nm)
+      off += 30 + nm.length + data.length
+    })
+    const csz = cen.reduce((a, x) => a + x.length, 0), e = new DataView(new ArrayBuffer(22))
+    e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, csz, true); e.setUint32(16, off, true)
+    return new Blob(parts.concat(cen, [new Uint8Array(e.buffer)]), { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+  }
+  function colName(i) { let s = ''; i++; while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26) } return s }
+  function xlsx(name, heads, rows, widths, sheet) {
+    const cell = (ref, v, st) => (typeof v === 'number' && isFinite(v)) ? '<c r="' + ref + '"' + (st ? ' s="' + st + '"' : '') + '><v>' + v + '</v></c>' : (v === '' || v == null ? '' : '<c r="' + ref + '" t="inlineStr"' + (st ? ' s="' + st + '"' : '') + '><is><t xml:space="preserve">' + xe(v) + '</t></is></c>')
+    let sd = '<row r="1">' + heads.map((h, i) => cell(colName(i) + '1', h, 1)).join('') + '</row>'
+    rows.forEach((r, k) => { const n = k + 2; sd += '<row r="' + n + '">' + r.map((v, i) => cell(colName(i) + n, v)).join('') + '</row>' })
+    const W = widths || heads.map((h) => Math.max(10, Math.min(40, String(h).length + 6)))
+    const X = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n', NS = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main', R = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
+    const ws = X + '<worksheet xmlns="' + NS + '"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>' + W.map((w, i) => '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>').join('') + '</cols><sheetData>' + sd + '</sheetData></worksheet>'
+    const st = X + '<styleSheet xmlns="' + NS + '"><fonts count="2"><font><sz val="11"/><name val="Tahoma"/></font><font><b/><color rgb="FFFFFFFF"/><sz val="11"/><name val="Tahoma"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF1A6B3C"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs></styleSheet>'
+    saveBlob(name + '.xlsx', zip([
+      { name: '[Content_Types].xml', data: X + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>' },
+      { name: '_rels/.rels', data: X + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="' + R + '/officeDocument" Target="xl/workbook.xml"/></Relationships>' },
+      { name: 'xl/workbook.xml', data: X + '<workbook xmlns="' + NS + '" xmlns:r="' + R + '"><sheets><sheet name="' + xe(String(sheet || 'ข้อมูล').slice(0, 31).replace(/[\\/?*[\]:]/g, '-')) + '" sheetId="1" r:id="rId1"/></sheets></workbook>' },
+      { name: 'xl/_rels/workbook.xml.rels', data: X + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="' + R + '/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="' + R + '/styles" Target="styles.xml"/></Relationships>' },
+      { name: 'xl/styles.xml', data: st },
+      { name: 'xl/worksheets/sheet1.xml', data: ws }
+    ]))
+  }
+  // หน้าต่างเลือกช่วงวันที่ → ดึงข้อมูล → พิมพ์ / Excel / CSV
+  function rangeModal(o) {
+    const today = new Date(), back = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return dk(d) }
+    const mStart = (k) => { const d = new Date(today.getFullYear(), today.getMonth() + k, 1); return dk(d) }
+    const mEnd = (k) => { const d = new Date(today.getFullYear(), today.getMonth() + k + 1, 0); return dk(d) }
+    const presets = [['7', 'ย้อนหลัง 7 วัน', back(6), dk(today)], ['14', '14 วัน', back(13), dk(today)], ['30', '30 วัน', back(29), dk(today)], ['m0', 'เดือนนี้', mStart(0), dk(today)], ['m1', 'เดือนก่อน', mStart(-1), mEnd(-1)]]
+    const def = presets.find((p) => p[0] === String(o.days || 14)) || presets[1]
+    const ov = document.createElement('div')
+    ov.className = 'rk-ov'
+    ov.innerHTML = '<div class="rk-box" role="dialog" aria-label="' + esc(o.title) + '"><h3>' + esc(o.title) + '</h3><p class="rk-sub">' + esc(o.sub || 'ข้อมูลทั้งหมดเก็บในชีต ดึงย้อนหลังได้ทุกวันที่') + '</p>' +
+      '<div class="rk-chips">' + (o.presets === false ? [] : presets).map((p) => '<button type="button" data-rk-p="' + p[0] + '"' + (p === def && !o.from ? ' class="on"' : '') + '>' + p[1] + '</button>').join('') + '</div>' +
+      '<div class="rk-dates"><label>ตั้งแต่วันที่<input type="date" id="rk-from" value="' + (o.from || def[2]) + '"></label><label>ถึงวันที่<input type="date" id="rk-to" value="' + (o.to || def[3]) + '"></label></div>' +
+      '<button type="button" class="rk-btn pri" id="rk-go" style="width:100%">🔎 ดึงข้อมูล</button><div class="rk-res" id="rk-res"></div>' +
+      '<button type="button" class="rk-btn rk-close" id="rk-x">ปิด</button></div>'
+    document.body.appendChild(ov)
+    const $ = (s) => ov.querySelector(s)
+    const close = () => { ov.remove(); document.removeEventListener('keydown', onKey, true) }
+    const onKey = (e) => { if (e.key === 'Escape' && !document.getElementById('pk-ov') && !document.getElementById('pv')) close() }
+    document.addEventListener('keydown', onKey, true)
+    ov.addEventListener('click', (e) => { if (e.target === ov) close() })
+    $('#rk-x').onclick = close
+    ov.querySelectorAll('[data-rk-p]').forEach((b) => { b.onclick = () => { const p = presets.find((x) => x[0] === b.dataset.rkP); $('#rk-from').value = p[2]; $('#rk-to').value = p[3]; ov.querySelectorAll('[data-rk-p]').forEach((x) => x.classList.toggle('on', x === b)); run() } })
+    let busy = false, data = null
+    async function run() {
+      const from = $('#rk-from').value, to = $('#rk-to').value, res = $('#rk-res')
+      if (!from || !to) { res.innerHTML = '<div class="rk-err">เลือกวันที่ให้ครบ</div>'; return }
+      if (from > to) { res.innerHTML = '<div class="rk-err">วันที่เริ่มต้องไม่หลังวันที่สิ้นสุด</div>'; return }
+      if (busy) return
+      busy = true; $('#rk-go').disabled = true; $('#rk-go').textContent = 'กำลังดึงข้อมูล…'; res.innerHTML = ''
+      try { data = await o.run(from, to) } catch (e) { data = null; res.innerHTML = '<div class="rk-err">ดึงข้อมูลไม่สำเร็จ: ' + esc(e && e.message ? e.message : e) + '</div>' }
+      busy = false; $('#rk-go').disabled = false; $('#rk-go').textContent = '🔎 ดึงข้อมูล'
+      if (!data) return
+      const label = dTH(from) + ' – ' + dTH(to)
+      if (!data.rows.length) { res.innerHTML = '<div class="rk-info">ไม่มีข้อมูลช่วง ' + esc(label) + '</div>'; return }
+      res.innerHTML = '<div class="rk-info"><b>ช่วง ' + esc(label) + '</b><br>' + (data.summary || (data.rows.length + ' แถว')) + '</div>' + (data.extra || '') +
+        '<div class="rk-row">' + (data.print ? '<button type="button" class="rk-btn pri" data-rk="print">🖨️ พิมพ์</button>' : '') + '<button type="button" class="rk-btn" data-rk="xlsx">📗 Excel</button><button type="button" class="rk-btn" data-rk="csv">📄 CSV</button></div>'
+      const file = (data.file || o.title) + '_' + from + '_ถึง_' + to
+      res.querySelectorAll('[data-rk]').forEach((b) => {
+        b.onclick = () => {
+          try {
+            if (b.dataset.rk === 'print') data.print(from, to)
+            else if (b.dataset.rk === 'xlsx') xlsx(file, data.heads, data.rows, data.widths, data.sheet || o.title)
+            else csv(file, data.heads, data.rows)
+          } catch (e) { alertBox(e) }
+        }
+      })
+      if (data.bind) data.bind(res, from, to)
+    }
+    const alertBox = (e) => { const r = $('#rk-res'); const d = document.createElement('div'); d.className = 'rk-err'; d.textContent = 'ทำไม่สำเร็จ: ' + (e && e.message ? e.message : e); r.prepend(d) }
+    $('#rk-go').onclick = run
+    if (o.autoRun !== false) run()
+    return { close: close }
+  }
+  // ค้นหาแบบใกล้เคียง: ตรงบางส่วน > ตัวอักษรเรียงตามลำดับ (ไม่ต้องพิมพ์ครบ)
+  const norm = (s) => String(s || '').toLowerCase().replace(/[\s\-_.,()\/:'"+]+/g, '')
+  function fuzzy(q, text) {
+    const t = norm(text), toks = String(q || '').toLowerCase().split(/\s+/).map(norm).filter(Boolean)
+    if (!toks.length) return -1
+    let total = 0
+    for (const k of toks) {
+      const i = t.indexOf(k)
+      if (i >= 0) { total += 1000 - Math.min(i, 500); continue }
+      if (k.length < 3) return -1
+      let last = -1, gaps = 0
+      for (const ch of k) { const j = t.indexOf(ch, last + 1); if (j < 0) return -1; if (last >= 0) gaps += j - last - 1; last = j }
+      if (gaps > k.length * 3) return -1
+      total += 400 - gaps * 10
+    }
+    return total / toks.length
+  }
+  return { saveBlob: saveBlob, csv: csv, xlsx: xlsx, rangeModal: rangeModal, fuzzy: fuzzy, dTH: dTH, dk: dk }
+})()
+</script>
+
 </head>
 <body data-mode="login">
 <script>
@@ -1117,6 +1275,7 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
       pushRecent(name || code, q)
       closeModal()
       render()
+      setTimeout(() => trWarn(code), 1300)
       if (backToCode && !scanOv) setTimeout(openCodeModal, 80) // กรอกรหัสเองจากหน้าหลัก → เปิดช่องรหัสต่อให้เลย (ถ้าสแกนอยู่ กล้องพร้อมสแกนต่อเอง)
     }
     const drawReasons = () => {
@@ -1266,11 +1425,13 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
   function openCodeModal() {
     let val = ''
     let alpha = false
+    let nameQ = ''
     let res = { list: [], exact: [] }
     const prefixes = topPrefixes()
     const sh = openModal(
       '<div class="m-title">กรอกรหัสสินค้า</div>' +
       '<div class="kp-disp empty" id="cd-disp">พิมพ์แค่ตัวเลข เช่น 01004</div>' +
+      '<input type="search" class="cd-name" id="cd-name" placeholder="🔤 หรือพิมพ์ชื่อสินค้า เช่น โรเมน / romaine" autocomplete="off">' +
       '<div class="pre-chips">' +
       prefixes.map((p) => '<button type="button" class="pre-chip" data-cd="P:' + esc(p) + '">' + esc(p) + '</button>').join('') +
       '<button type="button" class="pre-chip" data-cd="C" style="margin-left:auto">ล้าง</button></div>' +
@@ -1297,9 +1458,11 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
       const disp = $('#cd-disp', sh)
       disp.textContent = val || 'พิมพ์แค่ตัวเลข เช่น 01004'
       disp.classList.toggle('empty', !val)
-      res = matchCodes(val)
+      res = nameQ.trim() ? matchNames(nameQ) : matchCodes(val)
       const box = $('#cd-sugg', sh)
-      if (!val) {
+      if (nameQ.trim() && !res.list.length) {
+        box.innerHTML = '<div class="sugg-hint">ไม่พบสินค้าที่ชื่อใกล้เคียง "' + esc(nameQ) + '" — ลองพิมพ์คำสั้นลง หรือพิมพ์รหัสแทน</div>'
+      } else if (!val && !nameQ.trim()) {
         box.innerHTML = '<div class="sugg-hint">ไม่ต้องพิมพ์ FG / PK — พิมพ์ตัวเลขบางส่วนแล้วแตะรหัสที่ต้องการ</div>'
       } else if (!res.list.length) {
         box.innerHTML = '<div class="sugg-hint">ไม่พบรหัสที่มี "' + esc(val) + '" ในฐานสินค้า' +
@@ -1317,6 +1480,8 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
       $('#cd-pad', sh).innerHTML = padHtml()
     }
     const pick = (c) => { closeModal(); openQuickQty(c, !scanOv) }
+    const nameIn = $('#cd-name', sh)
+    nameIn.addEventListener('input', () => { nameQ = nameIn.value; if (nameQ.trim()) val = ''; update() })
     sh.addEventListener('click', (e) => {
       const t = e.target.closest('[data-cd]')
       if (!t || t.disabled) return
@@ -1324,10 +1489,11 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
       const i = v.indexOf(':')
       const cmd = i >= 0 ? v.slice(0, i) : v
       const arg = i >= 0 ? v.slice(i + 1) : ''
+      if (cmd === 'K' || cmd === 'P') { if (nameQ) { nameQ = ''; nameIn.value = '' } }
       if (cmd === 'K') { if (val.length < 20) val += arg; update() }
       else if (cmd === 'P') { val += arg; update() }
       else if (cmd === 'B') { val = val.slice(0, -1); update() }
-      else if (cmd === 'C') { val = ''; update() }
+      else if (cmd === 'C') { val = ''; nameQ = ''; nameIn.value = ''; update() }
       else if (cmd === 'T') { alpha = !alpha; update() }
       else if (cmd === 'S') pick(arg)
       else if (cmd === 'U') pick(val)
@@ -1512,6 +1678,143 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     } catch (e) { toast('ส่งออกไฟล์ไม่สำเร็จ: ' + e.message, 'err', 4500) }
   }
   const SESSION_BRANCH = () => branchById(SESSION.branchId)
+
+
+  /* ---------- v16: เตือนตอนรับของ ถ้ารหัสไม่มีในใบโอน / รับเกินใบโอน ---------- */
+  function trWarn(code) {
+    try {
+      if (CFG.MODE !== 'receive' || CFG.EXPIRY || !SAPM.rows.length) return
+      const R = trRecon(todayKey())
+      if (!R) return
+      const r = R.rows.find((x) => x.code === code)
+      if (!r) return
+      if (r.only && r.st === 'warn') toast('⚠️ รหัส ' + code + ' ไม่มีในใบโอน SAP ' + R.docs.join(', ') + ' — ตรวจว่ารับถูกรหัส (อาจสลับกับรหัสอื่นในใบโอน)', 'err', 6000)
+      else if (r.packs != null && r.recv - r.packs > TOL_TR) toast('⚠️ ' + (r.name || code) + ' รับแล้ว ' + fmtNum(r.recv) + ' เกินใบโอน (' + fmtNum(r.packs) + ') — ตรวจว่ารับซ้ำหรือผิดรหัส', 'err', 6000)
+    } catch (e) { /* ไม่ให้การเตือนทำให้บันทึกพัง */ }
+  }
+  /* ---------- v16: ทะเบียนวันหมดอายุ ↔ แอปตีคืน ----------
+     รหัสที่ตีคืนหลังจากอัปเดตล็อตครั้งล่าสุด → เสนอตัดออกจากล็อตที่หมดอายุก่อน (FIFO) */
+  let expRet = null, expRetBusy = false
+  async function loadExpRet() {
+    if (!CFG.EXPIRY || expRetBusy || !SESSION) return
+    expRetBusy = true
+    try {
+      const d = await sapApi('getReturns', { from: todayKey(new Date(Date.now() - 60 * 86400000)) })
+      expRet = d.items || []
+    } catch (e) { expRet = null }
+    expRetBusy = false
+    const el = $('#exp-ret'); if (el) el.innerHTML = expRetHtml()
+  }
+  function expRetPending() {
+    if (!expRet) return []
+    const lots = myEntries(), by = new Map()
+    lots.forEach((e) => { const x = by.get(e.code) || { code: e.code, name: e.name, pack: e.pack, last: 0, lots: [] }; x.last = Math.max(x.last, e.ts || 0); x.lots.push(e); by.set(e.code, x) })
+    const out = []
+    by.forEach((x) => {
+      const q = Math.round(expRet.filter((r) => String(r.code).toUpperCase() === x.code && (r.ts || 0) > x.last).reduce((a, r) => a + (Number(r.qty) || 0), 0) * 1000) / 1000
+      if (q > 0) out.push(Object.assign(x, { ret: q }))
+    })
+    return out
+  }
+  function expRetHtml() {
+    const p = expRetPending()
+    if (!p.length) return ''
+    return '<button type="button" class="sap-ban bad" data-act="exp-ret" style="margin-top:10px">↩️ มีการตีคืน ' + p.length + ' รหัส หลังอัปเดตทะเบียนครั้งล่าสุด — แตะเพื่อตัดออกจากล็อต</button>'
+  }
+  if (window.__RC_TEST) window.__V16R = { trWarn: (c) => trWarn(c), expRetPending: () => expRetPending(), loadExpRet: () => loadExpRet() }
+  function openExpRet() {
+    const p = expRetPending()
+    if (!p.length) { toast('ไม่มีรายการตีคืนที่ต้องตัด'); return }
+    const sh = openModal('<div class="m-title">↩️ ตัดของที่ตีคืนออกจากทะเบียน</div><p class="sugg-hint" style="margin:0 0 8px">ตัดจากล็อตที่หมดอายุก่อน (FIFO) · ถ้าไม่ใช่ล็อตนี้ แก้เองได้ในรายการ</p>' +
+      p.map((x, i) => { const lots = x.lots.slice().sort((a, b) => (a.exp < b.exp ? -1 : 1)); return '<div style="border-top:1px solid #e3ece5;padding:8px 0"><b>' + esc(x.code) + '</b> ' + esc(x.name || '') + '<br><small>ตีคืน ' + fmtNum(x.ret) + ' · ล็อต: ' + lots.map((e) => fmtExp(e.exp) + ' = ' + fmtNum(e.qty)).join(', ') + '</small><br><label style="display:flex;gap:8px;align-items:center;margin-top:4px"><input type="checkbox" data-er="' + i + '" checked> ตัดออก ' + fmtNum(Math.min(x.ret, lots.reduce((a, e) => a + e.qty, 0))) + '</label></div>' }).join('') +
+      '<div class="m-actions"><button type="button" class="btn btn-secondary" id="er-skip">ไม่ตัด (ทะเบียนถูกแล้ว)</button><button type="button" class="btn btn-primary" id="er-ok">✂️ ตัดออก</button></div>')
+    const done = (apply) => {
+      const now = nowT()
+      p.forEach((x, i) => {
+        const cb = sh.querySelector('[data-er="' + i + '"]')
+        let left = apply && cb && cb.checked ? x.ret : 0
+        const lots = x.lots.slice().sort((a, b) => (a.exp < b.exp ? -1 : 1)), rm = []
+        lots.forEach((e) => {
+          if (left > 0) { const t = Math.min(left, e.qty); e.qty = Math.round((e.qty - t) * 1000) / 1000; left = Math.round((left - t) * 1000) / 1000 }
+          e.ts = now // ทะเบียนรหัสนี้อัปเดตแล้ว → ตีคืนก่อนหน้านี้ไม่นับซ้ำ
+          if (e.qty <= 0) rm.push(e.id); else touchEntry(e)
+        })
+        if (rm.length) removeEntries(rm)
+      })
+      saveEntries(); closeModal(); render()
+      toast(apply ? '✂️ ตัดของที่ตีคืนออกจากทะเบียนแล้ว' : 'บันทึกว่าทะเบียนถูกแล้ว')
+    }
+    $('#er-ok', sh).onclick = () => done(true)
+    $('#er-skip', sh).onclick = () => done(false)
+  }
+  /* ---------- ดึงข้อมูลย้อนหลัง (จากชีต) + ส่งออก CSV ---------- */
+  const HIST_ON = CFG.MODE === 'receive' || CFG.MODE === 'return' || CFG.MODE === 'order'
+  const entHeads = () => ['วันที่', 'เวลา', 'สาขา', 'ผู้บันทึก', 'รหัสสินค้า', 'ชื่อสินค้า', 'Packsize', 'จำนวน', CFG.NOTE_HEAD].concat(RET ? ['ส่งคืนคลังเมื่อ'] : [])
+  const entRow = (e) => [e.date, e.time, e.branch || SESSION_BRANCH().name, e.user, e.code, e.name, e.pack || '', e.qty, e.note || ''].concat(RET ? [e.sent || ''] : [])
+  function exportCsv() {
+    const list = myEntries().slice().reverse()
+    if (!list.length) { toast('ไม่มีรายการให้ส่งออก', 'err'); return }
+    try { RK.csv(CFG.SHEET + '_' + SESSION_BRANCH().name + '_' + (RET ? (selDate === 'pending' ? 'รอส่ง_' + todayKey() : selDate) : selDate), entHeads(), list.map(entRow)); toast('ส่งออก CSV แล้ว ' + list.length + ' แถว') }
+    catch (e) { toast('ส่งออกไม่สำเร็จ: ' + e.message, 'err', 4000) }
+  }
+  function openHistory() {
+    RK.rangeModal({
+      title: '📅 ' + CFG.SHEET + 'ย้อนหลัง · สาขา' + SESSION_BRANCH().name, file: CFG.SHEET + '_' + SESSION_BRANCH().name, sheet: CFG.SHEET, days: 14,
+      sub: 'ดึงจากชีต (หน้าแอปเก็บแค่ 14 วัน แต่ในชีตเก็บถาวร) — พิมพ์ / Excel / CSV',
+      run: async (from, to) => {
+        const d = await sapApi('getEntriesRange', { app: CFG.MODE, from: from, to: to })
+        const items = (d.items || []).map((e) => Object.assign({ branch: SESSION_BRANCH().name }, e))
+        const days = new Set(items.map((e) => e.date)).size, codes = new Set(items.map((e) => e.code)).size
+        const tot = Math.round(items.reduce((a, e) => a + e.qty, 0) * 1000) / 1000
+        return {
+          rows: items.map(entRow), heads: entHeads(), widths: [12, 8, 14, 14, 14, 36, 14, 10, 28, 14],
+          summary: items.length + ' รายการ · ' + days + ' วัน · ' + codes + ' รหัส · รวม ' + fmtNum(tot),
+          print: (f, t) => printRange(items, f, t)
+        }
+      }
+    })
+  }
+  function printRange(items, from, to) {
+    const dTH = RK.dTH, isRet = CFG.MODE === 'return'
+    window.PrintKit.open({
+      name: CFG.SHEET + 'ย้อนหลัง', options: [['list', 'แยกตามวัน ทุกรายการ'], ['sum', 'รวมยอดตามรหัสสินค้า']],
+      build: (m) => {
+        const doc = {
+          kicker: (isRet ? 'GOODS RETURN' : CFG.MODE === 'order' ? 'PURCHASE ORDER' : 'GOODS RECEIVING') + ' · HISTORY', title: CFG.SHEET + 'สินค้าย้อนหลัง', sub: 'สาขา' + SESSION_BRANCH().name + ' · ' + dTH(from) + ' – ' + dTH(to),
+          meta: [['สาขา', SESSION_BRANCH().name], ['ช่วงวันที่', dTH(from) + ' – ' + dTH(to)], ['จำนวนรายการ', items.length + ' รายการ'], ['พิมพ์โดย', SESSION.user]],
+          noteBox: 'หมายเหตุ:', sign: ['ผู้จัดทำ', 'ผู้ตรวจสอบ', 'ผู้จัดการสาขา'], empty: 'ไม่มีรายการ', footRight: 'แอป' + CFG.TITLE + ' · ข้อมูลจากชีต'
+        }
+        const total = items.reduce((a, e) => a + e.qty, 0)
+        if (m === 'sum') {
+          const g = new Map()
+          items.forEach((e) => { const x = g.get(e.code) || { code: e.code, name: e.name, pack: e.pack, qty: 0, days: new Set() }; x.qty += e.qty; x.days.add(e.date); g.set(e.code, x) })
+          const rows = Array.from(g.values()).sort((a, b) => (a.code < b.code ? -1 : 1))
+          doc.cols = [{ h: 'ลำดับ', cls: 'c', w: '7%' }, { h: 'รหัสสินค้า', cls: 'code', w: '13%' }, { h: 'ชื่อสินค้า' }, { h: 'หน่วย', w: '14%' }, { h: 'จำนวนรวม', cls: 'n', w: '11%' }, { h: 'จำนวนวัน', cls: 'c', w: '9%' }]
+          doc.rows = rows.map((x, i) => ({ cells: [i + 1, x.code, x.name || '(ไม่มีในฐานสินค้า)', x.pack, fmtNum(Math.round(x.qty * 1000) / 1000), x.days.size] }))
+          doc.foot = ['', '', 'รวม ' + rows.length + ' รหัส', '', fmtNum(Math.round(total * 1000) / 1000), '']
+        } else {
+          doc.cols = [{ h: 'ลำดับ', cls: 'c', w: '6%' }, { h: 'เวลา', cls: 'c', w: '7%' }, { h: 'รหัสสินค้า', cls: 'code', w: '12%' }, { h: 'ชื่อสินค้า' }, { h: 'หน่วย', w: '12%' }, { h: 'จำนวน', cls: 'n', w: '8%' }, { h: CFG.NOTE_HEAD, w: '20%' }]
+          const rows = []
+          let n = 0, day = ''
+          items.forEach((e) => {
+            if (e.date !== day) { day = e.date; const c = items.filter((x) => x.date === day); rows.push({ sec: '📅 ' + dTH(day) + ' · ' + c.length + ' รายการ · รวม ' + fmtNum(Math.round(c.reduce((a, x) => a + x.qty, 0) * 1000) / 1000) }) }
+            rows.push({ cells: [++n, e.time, e.code, e.name || '(ไม่มีในฐานสินค้า)', e.pack, fmtNum(e.qty), [e.note, isRet && e.sent ? 'ส่งคืน ' + dTH(e.sent) : ''].filter(Boolean).join(' · ')] })
+          })
+          doc.rows = rows
+          doc.foot = ['', '', '', 'รวม ' + items.length + ' รายการ', '', fmtNum(Math.round(total * 1000) / 1000), '']
+        }
+        return doc
+      }
+    })
+  }
+  // ค้นหาด้วยชื่อสินค้า (ใกล้เคียง ไม่ต้องพิมพ์ครบ)
+  function matchNames(q) {
+    const sc = []
+    Object.keys(products).forEach((c) => { const pd = products[c] || ['', '']; const s = RK.fuzzy(q, pd[0] + ' ' + c); if (s >= 0) sc.push([s, c]) })
+    sc.sort((a, b) => b[0] - a[0] || String((products[a[1]] || [''])[0]).length - String((products[b[1]] || [''])[0]).length)
+    const list = sc.map((x) => x[1])
+    return { list: list, exact: list.length === 1 ? list : [] }
+  }
   /* ---------- สรุปของในร้าน = นับสต๊อกล่าสุด + รับเข้า (หลังเวลาส่งผลนับ) ---------- */
   async function openStoreSummary() {
     if (!SYNC_URL) { toast('ยังไม่ได้ตั้งค่า SYNC_URL', 'err'); return }
@@ -1708,7 +2011,7 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     if (err) err.hidden = true
     if (k === 'C') lg.pin = ''
     else if (k === 'B') lg.pin = lg.pin.slice(0, -1)
-    else if (/^\d$/.test(k) && lg.pin.length < PIN_LEN) lg.pin += k
+    else if (/^\d$/.test(k) && lg.pin.length < PIN_LEN) { lg.pin += k; if (lg.pin.length === PIN_LEN) setTimeout(() => { if (view === 'login' && lg.pin.length === PIN_LEN) doLogin() }, 160) } // รหัสครบ → เข้าเลย ไม่ต้องกดปุ่ม
     renderPin()
     document.querySelectorAll('.fruit-side').forEach((el) => { el.classList.add('pulse'); setTimeout(() => el.classList.remove('pulse'), 320) })
   }
@@ -1757,6 +2060,7 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
       (RET && selDate === 'pending' ? '<div class="ret-note">รายการจะอยู่ในรอบนี้จนกว่าจะกด <b>📤 ส่งคืนคลัง</b> · ระหว่างรอ แอปนับสต๊อกจะใส่เหตุผล "รอตีคืนคลัง" ให้อัตโนมัติ</div>' : '') +
       (dates.length > 1 ? '<div class="chips" style="margin:14px 0 0">' + dates.map((d) => '<button type="button" class="chip' + (d === selDate ? ' on' : '') + '" data-act="pick-date" data-d="' + esc(d) + '">' + esc(dLabel(d)) + '</button>').join('') + '</div>' : '') +
       '<div class="sync-line"></div>' +
+      '<div class="tools-row">' + (HIST_ON ? '<button type="button" class="btn btn-secondary" data-act="history">📅 ดูย้อนหลัง</button>' : '') + '<button type="button" class="btn btn-secondary" data-act="csv"' + (list.length ? '' : ' disabled') + '>📄 ส่งออก CSV</button></div>' +
       '<div class="sec-row"><div class="sec">รายการ' + esc(CFG.SHEET) + (RET ? (selDate === 'pending' ? ' — รอส่งคืนคลัง' : ' — ส่งคืนคลังแล้ว ' + esc(selDate.slice(8, 10) + '/' + selDate.slice(5, 7))) : isToday ? 'วันนี้' : 'วันที่ ' + esc(selDate)) + '</div>' + (list.length ? (RET && selDate !== 'pending' ? '<button type="button" class="clr" data-act="unsend">↩ ย้อนเป็นรอส่ง</button>' : '<button type="button" class="clr" data-act="clear-day">🧹 ล้างรายการ</button>') : '') + '</div>' +
       (list.length ? list.map((e) =>
         '<div class="ent' + (isQc(e) ? ' qc' : '') + '"><div class="info"><div class="nm">' + esc(e.name || e.code) + '</div><div class="sub">' + esc(e.code) + ' · ' + (RET ? esc(e.date.slice(8, 10) + '/' + e.date.slice(5, 7)) + ' ' : '') + esc(e.time) + (e.note ? ' · ' + esc(e.note) : '') + '</div></div>' +
@@ -1783,7 +2087,7 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
   function expListHtml(all) {
     let list = expFilter === 'soon' ? all.filter(expSoon) : expFilter === 'gone' ? all.filter(expGone) : all
     const q = expQ.trim().toLowerCase(), qd = q.replace(/\D/g, '')
-    if (q) list = list.filter((e) => e.code.toLowerCase().indexOf(q) >= 0 || (qd && e.code.replace(/\D/g, '').indexOf(qd) >= 0) || String(e.name || '').toLowerCase().indexOf(q) >= 0)
+    if (q) list = list.filter((e) => e.code.toLowerCase().indexOf(q) >= 0 || (qd && e.code.replace(/\D/g, '').indexOf(qd) >= 0) || String(e.name || '').toLowerCase().indexOf(q) >= 0 || (!/^[a-z]*\d+$/.test(q) && RK.fuzzy(q, (e.name || '') + ' ' + e.code) >= 0))
     const g = new Map()
     list.forEach((e) => { const x = g.get(e.code) || { code: e.code, name: e.name, pack: e.pack, lots: [] }; x.lots.push(e); g.set(e.code, x) })
     const gs = Array.from(g.values())
@@ -1813,6 +2117,7 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
       '<div class="stats s3 anim"><div class="stat"><b>' + nCodes + '</b><span>สินค้าในทะเบียน (' + all.length + ' ล็อต)</span></div>' +
       '<div class="stat x-warn-s"><b>' + soon.length + '</b><span>ใกล้หมดอายุ (≤' + WARN + ' วัน)</span></div>' +
       '<div class="stat x-bad-s"><b>' + gone.length + '</b><span>หมดอายุแล้ว</span></div></div>' +
+      '<div id="exp-ret">' + expRetHtml() + '</div>' +
       '<div class="stack">' +
       '<button type="button" class="act primary" data-act="scan"><span class="ic">📷</span><span class="tx"><b>สแกน QR สินค้า</b><small>ใส่จำนวน แล้วใส่วันหมดอายุ (วันเดิม = แทนที่จำนวน)</small></span><span class="go">›</span></button>' +
       '<button type="button" class="act" data-act="code"><span class="ic">🔢</span><span class="tx"><b>กรอกรหัสเอง</b><small>พิมพ์แค่ตัวเลขบางส่วน แล้วเลือกรหัสจากรายการ</small></span><span class="go">›</span></button>' +
@@ -1822,6 +2127,7 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
       '<div class="sync-line"></div>' +
       '<div class="sec-row"><div class="sec">ทะเบียนสินค้า (แยกล็อตตามวันหมดอายุ)</div>' + (gone.length ? '<button type="button" class="clr" data-act="clear-expired">🧹 ล้างที่หมดอายุแล้ว</button>' : '') + '</div>' +
       '<div id="exp-list">' + expListHtml(all) + '</div>'
+    if (!expRet) loadExpRet()
     const qi = $('#exp-q')
     if (qi) qi.oninput = () => { expQ = qi.value; const l = $('#exp-list'); if (l) l.innerHTML = expListHtml(myEntries()) }
     const dock = $('#dock')
@@ -2029,8 +2335,8 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
      - Transfer เทียบกับรับเข้าในแอป · GI เทียบกับรอบ "ส่งคืนคลัง" ในแอปตีคืน (เป็นรอบ ๆ แบบ FIFO)
      ===================================================================== */
   const SAPM_ON = CFG.MODE === 'receive' || CFG.MODE === 'return'
-  const SAPM_TYPES = [['Transfer', '🚚 Transfer — โอนย้ายจากคลังใหญ่เข้าหน้าร้าน', 'in'], ['GR', '📥 GR — รับเข้าคลัง', 'in'], ['DO', '🛒 DO — ขายออก', 'out'], ['GI', '↩️ GI — ตัดสต๊อก ตีคืนของเสียกลับคลัง', 'out'], ['OTHER', '📄 อื่น ๆ (เช่น CN)', 'in']]
-  const sapmType = (t) => (['Transfer', 'GR', 'DO', 'GI'].indexOf(t) >= 0 ? t : 'OTHER')
+  const SAPM_TYPES = [['Transfer', '🚚 Transfer — โอนย้ายจากคลังใหญ่เข้าหน้าร้าน', 'in'], ['GR', '📥 GR — รับเข้าคลัง', 'in'], ['DO', '🛒 DO — ขายออก', 'out'], ['GI', '↩️ GI — ตัดสต๊อก ตีคืนของเสียกลับคลัง', 'out'], ['CN', '🧾 CN — ยกเลิกบิล ของกลับเข้าสต๊อก', 'in'], ['OTHER', '📄 อื่น ๆ', 'in']]
+  const sapmType = (t) => (['Transfer', 'GR', 'DO', 'GI', 'CN'].indexOf(t) >= 0 ? t : 'OTHER')
   const TOL_TR = 0.05 // Transfer: ต่างไม่เกินกี่แพ็คถือว่าตรง
   const TOL_GI = 0.4 // GI ตัดเป็นเศษแพ็คได้
   const GI_WAIT = Number(CFG.GI_WAIT_DAYS) || 14 // คลังอาจทำ GI ช้า — รอได้กี่วันก่อนเตือนแดง
@@ -2349,7 +2655,7 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
       '<div class="sap-acts">' +
       (CFG.MODE === 'receive' ? '<button type="button" class="btn btn-primary btn-block" data-act="sap-tr">🚚 ① ตรวจรับของโอนย้าย (Transfer)</button>' : '') +
       '<button type="button" class="btn btn-secondary btn-block" data-act="sap-gi">↩️ ② กระทบ GI กับการตีคืน</button>' +
-      '<button type="button" class="btn btn-secondary btn-block" data-act="sap-ty">📊 ③ สรุปแยกประเภท (DO / Transfer / GR / GI)</button>' +
+      '<button type="button" class="btn btn-secondary btn-block" data-act="sap-ty">📊 ③ สรุปแยกประเภท (DO / Transfer / GR / GI / CN)</button>' +
       '<button type="button" class="btn btn-ghost btn-block" data-act="sap-reload">🔄 โหลดข้อมูลล่าสุดจากชีต</button></div></div>' +
       '<div class="card"><h3>📋 วางข้อมูลจาก SAP</h3><p style="margin:0 0 10px;color:var(--muted);font-size:14px">ไฟล์ Excel จาก SAP (คอลัมน์ รหัสสินค้า · ชื่อสินค้า · วันที่เอกสาร · ประเภทเอกสาร · เลขที่เอกสาร · จำนวนรับเข้า · จำนวนตัดออก · Inventory UoM) — วางช่วงวันที่ซ้ำได้ ระบบแทนที่ข้อมูลเดิมให้ ไม่ซ้ำ</p>' +
       '<input id="sap-file" type="file" accept=".xlsx,.csv,.txt,.tsv" style="width:100%;margin-bottom:10px">' +
@@ -2427,6 +2733,8 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
       confirmBox('ยกเลิกสินค้าที่รอซิงก์', 'ยกเลิกการเพิ่ม/แก้ ' + c + ' (ยังไม่ได้ขึ้นชีต)?', 'ตกลง', () => { delete extra[c]; delete PEND[c]; lsSet(K.pend, PEND); saveProducts(); render() })
     }
     else if (act === 'xlsx') exportExcel()
+    else if (act === 'csv') exportCsv()
+    else if (act === 'history') openHistory()
     else if (act === 'print') printEntries()
     else if (act === 'store-sum') openStoreSummary()
     else if (act === 'move') {
@@ -2438,6 +2746,7 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
       const c = el.getAttribute('data-code'), ls = lotsOfCode(c)
       if (ls.length) confirmBox('ลบทุกล็อต', 'ลบ ' + (ls[0].name || c) + ' ทั้งหมด ' + ls.length + ' ล็อต ออกจากทะเบียน? (ลบจากทุกเครื่อง · ในชีตเก็บสำเนาไว้ที่แท็บ ถังขยะ)', 'ลบทั้งหมด', () => { removeEntries(ls.map((e) => e.id)); render() })
     }
+    else if (act === 'exp-ret') openExpRet()
     else if (act === 'exp-filter') { expFilter = el.getAttribute('data-f'); render() }
     else if (act === 'clear-expired') {
       const g = myEntries().filter((e) => { const d = daysLeft(e.exp); return d != null && d < 0 })
@@ -2533,5 +2842,7 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
   document.head.appendChild(st)
 })()
 </script>
+
+
 </body>
 </html>
