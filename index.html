@@ -489,6 +489,13 @@ input[type='file'] { padding: 8px; font-size: 14px; }
 .tools-row { display: flex; gap: 8px; margin: 12px 0 0; } .tools-row .btn { flex: 1; min-height: 42px; font-size: 14.5px; }
 .cd-name { width: 100%; min-height: 46px; margin: 8px 0 4px; border: 1.5px solid #c8ddc8; border-radius: 12px; padding: 8px 12px; font: inherit; font-size: 16px; color: #1a2a1a; background: #f4f8f5; }
 .cd-name:focus { outline: none; border-color: #2d8a52; background: #fff; box-shadow: 0 0 0 3px rgba(45,138,82,.14); }
+/* ---------- ปุ่มสลับโหมด สแกน / รหัส / ชื่อ ---------- */
+.smode { display: flex; gap: 4px; padding: 4px; margin: 4px 0 8px; border-radius: 14px; background: #eef4ef; }
+.smode-b { flex: 1; min-height: 44px; border: 0; border-radius: 10px; background: transparent; font: inherit; font-size: 15px; font-weight: 700; color: #3d5a45; cursor: pointer; }
+.smode-b.on { background: #fff; color: #1a7a3c; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12); }
+.smode.dark { flex: none; width: calc(100% - 24px); margin: 4px 12px 0; background: rgba(255, 255, 255, 0.12); }
+.smode.dark .smode-b { color: #fff; }
+.smode.dark .smode-b.on { background: #fff; color: #0f3b22; }
 </style>
 <style>
 /* ---------- ใบพิมพ์ (PrintKit) ---------- */
@@ -499,6 +506,10 @@ input[type='file'] { padding: 8px; font-size: 14px; }
 #pk-ov .pk-bar button { min-height: 0; }
 .pk-bar button { font: 700 15px Sarabun, sans-serif; border: 0; border-radius: 10px; padding: 9px 16px; cursor: pointer; }
 .pk-go { background: #f5c542; color: #3b2c00; }
+.pk-xl { background: #e8f5ee; color: #145f2f; }
+.pk-pb { height: 0; break-after: page; page-break-after: always; }
+.pk-sheet .pk-pb { border-top: 2px dashed #9bbfa8; margin: 22px -12mm; }
+.pk-doc.tall td { padding-top: 7px; padding-bottom: 7px; }
 .pk-x { background: rgba(255,255,255,.15); color: #fff; }
 .pk-scroll { flex: 1; overflow: auto; padding: 14px 12px 30px; -webkit-overflow-scrolling: touch; }
 .pk-sheet { background: #fff; width: 210mm; min-height: 297mm; margin: 0 auto; padding: 12mm; box-shadow: 0 4px 22px rgba(0,0,0,.18); }
@@ -515,7 +526,8 @@ input[type='file'] { padding: 8px; font-size: 14px; }
 .pk-doc table { width: 100%; border-collapse: collapse; }
 .pk-doc th, .pk-doc td { border: 1px solid #000; padding: 3px 5px; vertical-align: top; }
 .pk-doc th { background: #eee; font-weight: 700; text-align: center; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-.pk-doc td.n, .pk-doc th.n { text-align: right; white-space: nowrap; }
+.pk-doc td.n, .pk-doc th.n { text-align: center; white-space: nowrap; }
+.pk-doc td.d { text-align: center; white-space: nowrap; }
 .pk-doc td.c { text-align: center; white-space: nowrap; }
 .pk-doc td.code { white-space: nowrap; }
 .pk-doc td.blank { min-width: 60px; }
@@ -560,10 +572,210 @@ input[type='file'] { padding: 8px; font-size: 14px; }
 window.PrintKit = (function () {
   var esc = function (v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] }) }
   var pad = function (n) { return (n < 10 ? '0' : '') + n }
+  // ช่องที่เป็นวันที่/เวลา → จัดกึ่งกลาง (เช่น 23 พ.ย. 2026 · 23/11/2026 · 2026-11-23 · 20:15)
+  var DATE_RE = /^(\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}(\/\d{2,4})?|\d{1,2} [\u0E00-\u0E7F.]{2,6} \d{2,4})( \d{1,2}:\d{2}(:\d{2})?)?$|^\d{1,2}:\d{2}$/
+  var isDate = function (v) { return typeof v === 'string' && DATE_RE.test(v.trim()) }
   function stamp() { var d = new Date(); return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) }
   // doc = { title, sub, docNoLabel, meta:[[label,value]], cols:[{h, cls, w}], rows:[{cells:[], hl}], foot:[cells]|null, summary:html, noteBox:label|null, sign:[labels], empty }
+  /* ---------- ส่งออก Excel แบบฟอร์ม (หน้าตาเดียวกับใบพิมพ์ · ธีมเขียว) ----------
+     doc เดียว = 1 ชีต · หลายใบ (array) = หลายชีตในไฟล์เดียว · หัวตารางพิมพ์ซ้ำทุกหน้า · A4 พอดีความกว้าง */
+  var XL = (function () {
+    var CRC = (function () { var t = []; for (var n = 0; n < 256; n++) { var c = n; for (var k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0 } return t })()
+    function crc(b) { var c = 0xffffffff; for (var i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0 }
+    function zip(files) { // เก็บแบบไม่บีบอัด (Excel เปิดได้ปกติ)
+      var enc = new TextEncoder(), parts = [], cen = [], off = 0
+      var u16 = function (v) { return [v & 255, (v >>> 8) & 255] }, u32 = function (v) { return [v & 255, (v >>> 8) & 255, (v >>> 16) & 255, (v >>> 24) & 255] }
+      files.forEach(function (f) {
+        var name = enc.encode(f.name), data = enc.encode(f.data), c = crc(data)
+        var lh = [].concat([0x50, 0x4b, 3, 4], u16(20), u16(0x0800), u16(0), u16(0), u16(0x21), u32(c), u32(data.length), u32(data.length), u16(name.length), u16(0))
+        parts.push(new Uint8Array(lh), name, data)
+        cen.push(new Uint8Array([].concat([0x50, 0x4b, 1, 2], u16(20), u16(20), u16(0x0800), u16(0), u16(0), u16(0x21), u32(c), u32(data.length), u32(data.length), u16(name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(off))), name)
+        off += lh.length + name.length + data.length
+      })
+      var cs = cen.reduce(function (a, x) { return a + x.length }, 0)
+      var n = files.length
+      return new Blob(parts.concat(cen, [new Uint8Array([].concat([0x50, 0x4b, 5, 6], u16(0), u16(0), u16(n), u16(n), u32(cs), u32(off), u16(0)))]), { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    }
+    var xe = function (v) { return String(v == null ? '' : v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] }).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '') }
+    var colL = function (i) { var s = ''; i++; while (i > 0) { var m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26) } return s }
+    var plain = function (h) { return String(h == null ? '' : h).replace(/<br\s*\/?>/gi, '\n').replace(/<\/(div|p|li)>/gi, '\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/\n{3,}/g, '\n\n').trim() }
+    // ---------- สไตล์ (สร้างตามที่ใช้จริง) ----------
+    function Styles() {
+      var fonts = ['<font><sz val="10"/><name val="Tahoma"/></font>'], fills = ['<fill><patternFill patternType="none"/></fill>', '<fill><patternFill patternType="gray125"/></fill>'], borders = ['<border/>'], xfs = ['<xf fontId="0" fillId="0" borderId="0"/>'], key = {}
+      var idx = function (arr, x) { var i = arr.indexOf(x); if (i < 0) { arr.push(x); i = arr.length - 1 } return i }
+      this.get = function (o) {
+        var k = JSON.stringify(o); if (key.hasOwnProperty(k)) return key[k]
+        var f = idx(fonts, '<font>' + (o.b ? '<b/>' : '') + (o.i ? '<i/>' : '') + '<sz val="' + (o.sz || 10) + '"/><color rgb="FF' + (o.c || '000000') + '"/><name val="Tahoma"/></font>')
+        var fl = o.bg ? idx(fills, '<fill><patternFill patternType="solid"><fgColor rgb="FF' + o.bg + '"/><bgColor indexed="64"/></patternFill></fill>') : 0
+        var bd = 0
+        if (o.bd || o.bl || o.bb || o.bt) {
+          var side = function (n, on, st, col) { return on ? '<' + n + ' style="' + st + '"><color rgb="FF' + col + '"/></' + n + '>' : '<' + n + '/>' }
+          var bc = o.bc || 'B8DFC8'
+          bd = idx(borders, '<border>' + side('left', o.bd || o.bl, o.bl ? 'thick' : 'thin', o.bl ? '1A7A3C' : bc) + side('right', o.bd, 'thin', bc) + side('top', o.bd || o.bt, o.bt ? 'medium' : 'thin', o.bt ? '1A7A3C' : bc) + side('bottom', o.bd || o.bb, o.bb ? (o.bbs || 'medium') : 'thin', o.bb ? (o.bbc || '1A7A3C') : bc) + '<diagonal/></border>')
+        }
+        var al = '<alignment' + (o.h ? ' horizontal="' + o.h + '"' : '') + ' vertical="' + (o.v || 'center') + '"' + (o.w ? ' wrapText="1"' : '') + '/>'
+        xfs.push('<xf numFmtId="' + (o.num ? 164 : 0) + '" fontId="' + f + '" fillId="' + fl + '" borderId="' + bd + '" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"' + (o.num ? ' applyNumberFormat="1"' : '') + '>' + al + '</xf>')
+        return (key[k] = xfs.length - 1)
+      }
+      this.xml = function () {
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0.###;-#,##0.###;0"/></numFmts>' +
+          '<fonts count="' + fonts.length + '">' + fonts.join('') + '</fonts><fills count="' + fills.length + '">' + fills.join('') + '</fills><borders count="' + borders.length + '">' + borders.join('') + '</borders>' +
+          '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="' + xfs.length + '">' + xfs.join('') + '</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>'
+      }
+    }
+    var G = '145F2F', G2 = '1A7A3C', GL = 'E8F5EE', GM = 'B8DFC8'
+    // ---------- 1 doc → 1 ชีต ----------
+    function sheetOf(doc, ST) {
+      var cols = doc.cols || [], n = Math.max(cols.length, 3), rows = [], merges = [], heights = {}, R = 0, titleRow = 0
+      var total = 100, fixed = 0, free = 0
+      cols.forEach(function (c) { var p = parseFloat(c.w); if (p) fixed += p; else free++ })
+      var widths = cols.map(function (c) { var p = parseFloat(c.w); var w = p ? p : Math.max(8, (100 - fixed) / Math.max(free, 1)); return Math.max(5, Math.round(w * total / 100 * 1.05)) })
+      while (widths.length < n) widths.push(14)
+      var put = function (r, c, v, s, kind) { (rows[r] || (rows[r] = []))[c] = { v: v, s: s, k: kind } }
+      var span = function (r, c1, c2, v, s, rh) { // merged cell (ใส่สไตล์ทุกช่องให้เส้นขอบครบ)
+        for (var c = c1; c <= c2; c++) put(r, c, c === c1 ? v : '', s)
+        if (rh) for (var k = 1; k < rh; k++) for (var c3 = c1; c3 <= c2; c3++) put(r + k, c3, '', s)
+        if (c2 > c1 || rh > 1) merges.push(colL(c1) + (r + 1) + ':' + colL(c2) + (r + (rh || 1)))
+      }
+      var groups = function (k) { // แบ่งคอลัมน์เป็น k กลุ่มให้ความกว้างใกล้กัน
+        var tot = widths.slice(0, n).reduce(function (a, w) { return a + w }, 0), out = [], a = 0, acc = 0
+        for (var i = 0; i < n && out.length < k - 1; i++) { acc += widths[i]; if (acc >= tot * (out.length + 1) / k && n - i - 1 >= k - out.length - 1) { out.push([a, i]); a = i + 1 } }
+        out.push([a, n - 1])
+        while (out.length < k) out.push([n - 1, n - 1])
+        return out
+      }
+      // หัวกระดาษ
+      if (doc.kicker) span(R, 0, n - 3 >= 0 ? Math.max(0, n - 3) : 0, doc.kicker, ST.get({ sz: 8, b: 1, c: G2 }))
+      span(R, Math.max(1, n - 2), n - 1, (doc.docNoLabel || 'เลขที่เอกสาร') + ' ...................', ST.get({ sz: 9, h: 'right' }))
+      R++
+      span(R, 0, n - 1, doc.title || '', ST.get({ sz: 16, b: 1, c: G })); heights[R] = 26; R++
+      if (doc.sub) { span(R, 0, n - 1, doc.sub, ST.get({ sz: 10, b: 1, c: G2, bb: 1, bbs: 'medium' })); R++ } else { for (var c0 = 0; c0 < n; c0++) put(R - 1, c0, rows[R - 1][c0] ? rows[R - 1][c0].v : '', ST.get({ sz: 16, b: 1, c: G, bb: 1 })) }
+      R++
+      // ข้อมูลหัวเอกสาร (meta) — แถวละ 3 หรือ 4 ช่อง
+      if (doc.meta && doc.meta.length) {
+        var per = doc.meta.length % 4 === 0 ? 4 : 3, gs = groups(Math.min(per, n))
+        for (var i = 0; i < doc.meta.length; i += gs.length) {
+          doc.meta.slice(i, i + gs.length).forEach(function (m, j) {
+            span(R, gs[j][0], gs[j][1], m[0], ST.get({ sz: 8, c: '4B6B55', bg: GL, bl: 1 }))
+            span(R + 1, gs[j][0], gs[j][1], m[1], ST.get({ sz: 10, b: 1, bg: GL, bl: 1, w: 1 }))
+          })
+          R += 2
+        }
+        R++
+      }
+      // ตาราง
+      titleRow = R
+      cols.forEach(function (c, i) { put(R, i, c.h, ST.get({ b: 1, c: 'FFFFFF', bg: G2, bd: 1, bc: G2, h: 'center', w: 1 })) })
+      heights[R] = 30; R++
+      var tall = /\btall\b/.test(doc.cls || '')
+      var cellStyle = function (cls, even, hl) {
+        var bg = hl ? 'FDECEA' : even ? 'F6FBF8' : null, o = { bd: 1, w: 1, v: 'top' }
+        if (bg) o.bg = bg
+        if (cls === 'n') { o.h = 'center'; o.num = 1 } else if (cls === 'c' || cls === 'd') o.h = 'center'
+        if (tall) o.v = 'center'
+        return ST.get(o)
+      }
+      if (!doc.rows || !doc.rows.length) { span(R, 0, cols.length - 1, doc.empty || 'ไม่มีรายการ', ST.get({ bd: 1, h: 'center', c: '555555' })); R++ }
+      var even = false
+      ;(doc.rows || []).forEach(function (r) {
+        if (r.sec) { span(R, 0, cols.length - 1, r.sec, ST.get({ b: 1, c: G, bg: GL, bd: 1, w: 1 })); heights[R] = 20; R++; even = false; return }
+        even = !even
+        r.cells.forEach(function (v, i) {
+          var cls = cols[i] && cols[i].cls
+          var isNum = cls === 'n' && (typeof v === 'number' || /^-?\d[\d,]*(\.\d+)?$/.test(String(v).trim()))
+          put(R, i, isNum ? Number(String(v).replace(/,/g, '')) : v, cellStyle(cls || (isDate(v) ? 'd' : ''), !even, r.hl), isNum ? 'n' : 's')
+        })
+        for (var k = r.cells.length; k < cols.length; k++) put(R, k, '', cellStyle(cols[k].cls, !even, r.hl))
+        if (tall) heights[R] = 24
+        R++
+      })
+      if (doc.foot && doc.rows && doc.rows.length) {
+        doc.foot.forEach(function (v, i) {
+          var cls = cols[i] && cols[i].cls, isNum = cls === 'n' && /^-?\d[\d,]*(\.\d+)?$/.test(String(v).trim())
+          put(R, i, isNum ? Number(String(v).replace(/,/g, '')) : v, ST.get({ b: 1, c: G, bg: GL, bd: 1, h: cls === 'n' || cls === 'c' || isDate(v) ? 'center' : undefined, num: isNum ? 1 : undefined }), isNum ? 'n' : 's')
+        })
+        R++
+      }
+      R++
+      if (doc.summary) { var t = plain(doc.summary); var nl = t.split('\n').length; span(R, 0, n - 1, t, ST.get({ w: 1, v: 'top' })); heights[R] = Math.min(400, 15 * nl + 4); R += 2 }
+      if (doc.noteBox) { span(R, 0, n - 1, doc.noteBox, ST.get({ b: 1, c: G, bl: 1, bd: 1, bc: GM, v: 'top' }), 3); R += 4 }
+      if (doc.sign && doc.sign.length) {
+        R++
+        var sg = groups(Math.min(doc.sign.length, n))
+        doc.sign.forEach(function (s, j) {
+          span(R, sg[j][0], sg[j][1], '', ST.get({ bb: 1, bbs: 'dotted', bbc: '000000' }))
+          span(R + 1, sg[j][0], sg[j][1], '(.......................................)', ST.get({ h: 'center' }))
+          span(R + 2, sg[j][0], sg[j][1], s, ST.get({ h: 'center', b: 1, c: G }))
+          span(R + 3, sg[j][0], sg[j][1], 'วันที่ ....../....../......', ST.get({ h: 'center' }))
+        })
+        heights[R] = 30
+        R += 5
+      }
+      span(R, 0, Math.max(0, Math.floor(n / 2) - 1), 'พิมพ์เมื่อ ' + stampNow(), ST.get({ sz: 8, c: '555555', bt: 0 }))
+      if (doc.footRight) span(R, Math.floor(n / 2), n - 1, doc.footRight, ST.get({ sz: 8, c: '555555', h: 'right' }))
+      // XML
+      var sd = rows.map(function (r, ri) {
+        if (!r) return ''
+        var cells = ''
+        for (var c = 0; c < r.length; c++) {
+          var x = r[c]; if (!x) continue
+          var ref = colL(c) + (ri + 1)
+          if (x.k === 'n') cells += '<c r="' + ref + '" s="' + x.s + '"><v>' + x.v + '</v></c>'
+          else if (x.v === '' || x.v == null) cells += '<c r="' + ref + '" s="' + x.s + '"/>'
+          else cells += '<c r="' + ref + '" s="' + x.s + '" t="inlineStr"><is><t xml:space="preserve">' + xe(x.v) + '</t></is></c>'
+        }
+        return '<row r="' + (ri + 1) + '"' + (heights[ri] ? ' ht="' + heights[ri] + '" customHeight="1"' : '') + '>' + cells + '</row>'
+      }).join('')
+      var xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+        '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><sheetViews><sheetView workbookViewId="0" showGridLines="0"/></sheetViews><sheetFormatPr defaultRowHeight="16"/>' +
+        '<cols>' + widths.map(function (w, i) { return '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>' }).join('') + '</cols>' +
+        '<sheetData>' + sd + '</sheetData>' +
+        (merges.length ? '<mergeCells count="' + merges.length + '">' + merges.map(function (m) { return '<mergeCell ref="' + m + '"/>' }).join('') + '</mergeCells>' : '') +
+        '<printOptions horizontalCentered="1"/><pageMargins left="0.4" right="0.4" top="0.45" bottom="0.5" header="0.2" footer="0.25"/>' +
+        '<pageSetup paperSize="9" orientation="portrait" fitToWidth="1" fitToHeight="0"/><headerFooter><oddFooter>&amp;R&amp;8หน้า &amp;P / &amp;N</oddFooter></headerFooter></worksheet>'
+      return { xml: xml, titleRow: titleRow + 1, hasTable: cols.length > 0 }
+    }
+    function stampNow() { var d = new Date(), p = function (x) { return (x < 10 ? '0' : '') + x }; return p(d.getDate()) + '/' + p(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()) }
+    function build(docs) {
+      docs = (Array.isArray(docs) ? docs : [docs]).filter(function (d) { return d && !d.raw })
+      var ST = new Styles(), used = {}, sheets = docs.map(function (d, i) {
+        var nm = String(d.sheet || d.title || ('ใบที่ ' + (i + 1))).replace(/[\\/?*[\]:]/g, '-').slice(0, 28) || ('ใบที่ ' + (i + 1))
+        var base = nm, k = 2; while (used[nm]) nm = base.slice(0, 25) + ' (' + (k++) + ')'
+        used[nm] = 1
+        var s = sheetOf(d, ST); s.name = nm; return s
+      })
+      var R = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships', X = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      var dn = sheets.map(function (s, i) { return s.hasTable ? '<definedName name="_xlNm.Print_Titles" localSheetId="' + i + '">\'' + xe(s.name).replace(/'/g, "''") + '\'!$' + s.titleRow + ':$' + s.titleRow + '</definedName>' : '' }).join('')
+      var files = [
+        { name: '[Content_Types].xml', data: X + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' + sheets.map(function (s, i) { return '<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' }).join('') + '</Types>' },
+        { name: '_rels/.rels', data: X + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="' + R + '/officeDocument" Target="xl/workbook.xml"/></Relationships>' },
+        { name: 'xl/workbook.xml', data: X + '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="' + R + '"><sheets>' + sheets.map(function (s, i) { return '<sheet name="' + xe(s.name) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>' }).join('') + '</sheets>' + (dn ? '<definedNames>' + dn + '</definedNames>' : '') + '</workbook>' },
+        { name: 'xl/_rels/workbook.xml.rels', data: X + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' + sheets.map(function (s, i) { return '<Relationship Id="rId' + (i + 1) + '" Type="' + R + '/worksheet" Target="worksheets/sheet' + (i + 1) + '.xml"/>' }).join('') + '<Relationship Id="rId' + (sheets.length + 1) + '" Type="' + R + '/styles" Target="styles.xml"/></Relationships>' },
+        { name: 'xl/styles.xml', data: ST.xml() }
+      ].concat(sheets.map(function (s, i) { return { name: 'xl/worksheets/sheet' + (i + 1) + '.xml', data: s.xml } }))
+      return zip(files)
+    }
+    function save(blob, name) {
+      var a = document.createElement('a'), url = URL.createObjectURL(blob)
+      a.href = url; a.download = name; document.body.appendChild(a); a.click()
+      setTimeout(function () { URL.revokeObjectURL(url); a.remove() }, 4000)
+    }
+    return { build: build, save: save }
+  })()
+  function xlName(cfg, docs) {
+    var d = new Date(), p = function (x) { return (x < 10 ? '0' : '') + x }
+    var first = Array.isArray(docs) ? docs[0] : docs
+    var base = String((first && first.title) || cfg.name || 'แบบฟอร์ม').replace(/[\\/:*?"<>|]/g, '-').trim()
+    return base + '_' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()) + '.xlsx'
+  }
+  function exportXlsx(cfg, doc) {
+    var x = doc && doc.raw ? doc.x : doc // ใบที่ทำเป็น HTML เอง: ใช้ข้อมูลแบบตาราง (doc.x) แทน
+    if (!x || (Array.isArray(x) && !x.length)) { alert('ใบนี้ยังส่งออก Excel ไม่ได้ — ใช้ "สั่งพิมพ์" แทน'); return }
+    XL.save(XL.build(x), xlName(cfg, x))
+  }
   function render(doc) {
-    var h = '<div class="pk-doc">'
+    if (Array.isArray(doc)) return doc.map(render).join('<div class="pk-pb"></div>') // หลายใบ = ขึ้นหน้าใหม่ทุกใบ
+    var h = '<div class="pk-doc' + (doc.cls ? ' ' + esc(doc.cls) : '') + '">'
     h += '<div class="pk-head"><div>' + (doc.kicker ? '<small class="pk-kick">' + esc(doc.kicker) + '</small>' : '') + '<h1>' + esc(doc.title) + '</h1>' + (doc.sub ? '<div class="pk-sub">' + esc(doc.sub) + '</div>' : '') + '</div>' +
       '<div class="pk-docno">' + esc(doc.docNoLabel || 'เลขที่เอกสาร') + ' ......................</div></div>'
     if (doc.meta && doc.meta.length) h += '<div class="pk-meta" style="grid-template-columns:repeat(' + (doc.meta.length % 4 === 0 ? 4 : 3) + ',1fr)">' + doc.meta.map(function (m) { return '<div><span>' + esc(m[0]) + '</span><b>' + esc(m[1]) + '</b></div>' }).join('') + '</div>'
@@ -572,7 +784,7 @@ window.PrintKit = (function () {
     if (!doc.rows.length) h += '<tr><td colspan="' + doc.cols.length + '" class="pk-empty">' + esc(doc.empty || 'ไม่มีรายการ') + '</td></tr>'
     doc.rows.forEach(function (r) {
       if (r.sec) { h += '<tr class="sec"><td colspan="' + doc.cols.length + '">' + esc(r.sec) + '</td></tr>'; return }
-      h += '<tr' + (r.hl ? ' class="hl"' : '') + '>' + r.cells.map(function (v, i) { var c = doc.cols[i].cls; return '<td' + (c ? ' class="' + c + '"' : '') + '>' + esc(v) + '</td>' }).join('') + '</tr>'
+      h += '<tr' + (r.hl ? ' class="hl"' : '') + '>' + r.cells.map(function (v, i) { var c = doc.cols[i].cls || (isDate(v) ? 'd' : ''); return '<td' + (c ? ' class="' + c + '"' : '') + '>' + esc(v) + '</td>' }).join('') + '</tr>'
     })
     h += '</tbody>'
     if (doc.foot && doc.rows.length) h += '<tfoot><tr>' + doc.foot.map(function (v, i) { var c = doc.cols[i] && doc.cols[i].cls; return '<td' + (c ? ' class="' + c + '"' : '') + '>' + esc(v) + '</td>' }).join('') + '</tr></tfoot>'
@@ -607,13 +819,14 @@ window.PrintKit = (function () {
     ov.id = 'pk-ov'
     ov.innerHTML = '<div class="pk-bar"><b>🖨️ ' + esc(cfg.name || 'พิมพ์') + '</b>' +
       (cfg.options && cfg.options.length > 1 ? '<select class="pk-opt">' + cfg.options.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (o[0] === cur ? ' selected' : '') + '>' + esc(o[1]) + '</option>' }).join('') + '</select>' : '') +
-      '<button type="button" class="pk-go">🖨️ สั่งพิมพ์</button><button type="button" class="pk-x">ปิด</button></div>' +
-      '<div class="pk-scroll"><p class="pk-msg">ตัวอย่างใบพิมพ์ (A4) — ตรวจแล้วกด "สั่งพิมพ์" · บนมือถือเลือกเครื่องพิมพ์ หรือบันทึกเป็น PDF ได้</p><div class="pk-sheet"></div></div>'
+      '<button type="button" class="pk-xl">📗 Excel</button><button type="button" class="pk-go">🖨️ สั่งพิมพ์</button><button type="button" class="pk-x">ปิด</button></div>' +
+      '<div class="pk-scroll"><p class="pk-msg">ตัวอย่างใบพิมพ์ (A4) — ตรวจแล้วกด "สั่งพิมพ์" หรือ "📗 Excel" เก็บเป็นไฟล์ · บนมือถือเลือกเครื่องพิมพ์ หรือบันทึกเป็น PDF ได้</p><div class="pk-sheet"></div></div>'
     document.body.appendChild(ov)
     var draw = function () { ov.querySelector('.pk-sheet').innerHTML = render(cfg.build(cur)); fit() }
     var sel = ov.querySelector('.pk-opt')
     if (sel) sel.addEventListener('change', function () { cur = sel.value; draw() })
     ov.querySelector('.pk-x').addEventListener('click', close)
+    ov.querySelector('.pk-xl').addEventListener('click', function () { exportXlsx(cfg, cfg.build(cur)) })
     ov.querySelector('.pk-go').addEventListener('click', function () { print(render(cfg.build(cur))) })
     document.addEventListener('keydown', onKey, true)
     window.addEventListener('resize', fit)
@@ -628,7 +841,7 @@ window.PrintKit = (function () {
     window.addEventListener('afterprint', done)
     try { window.print() } catch (e) { done() }
   }
-  return { open: open, close: close, render: render, print: print }
+  return { open: open, close: close, render: render, print: print, xlsx: function (doc) { return XL.build(doc) } }
 })()
 </script>
 <style>
@@ -1422,16 +1635,23 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     return Object.keys(freq).sort((a, b) => freq[b] - freq[a]).slice(0, 4)
   }
   const SHOW_MAX = 12
-  function openCodeModal() {
+  // ปุ่มสลับโหมดค้นหา (ใช้ทั้งในหน้ากล้องและหน้าค้นหา) — กดสลับได้เลย ไม่ต้องปิดก่อน
+  function modeBar(where) {
+    const b = (m, ic, tx) => '<button type="button" class="smode-b' + (where === 'scan' && m === 'scan' ? ' on' : '') + '" data-smode="' + m + '">' + ic + ' ' + tx + '</button>'
+    return '<div class="smode' + (where === 'scan' ? ' dark' : '') + '">' + b('scan', '📷', 'สแกน') + b('code', '🔢', 'รหัส') + b('name', '🔤', 'ชื่อ') + '</div>'
+  }
+  let searchMode = 'code' // โหมดค้นหาล่าสุด: code = กรอกรหัส / name = พิมพ์ชื่อ
+  function openCodeModal(mode) {
+    if (mode === 'code' || mode === 'name') searchMode = mode
     let val = ''
     let alpha = false
     let nameQ = ''
     let res = { list: [], exact: [] }
     const prefixes = topPrefixes()
     const sh = openModal(
-      '<div class="m-title">กรอกรหัสสินค้า</div>' +
+      '<div class="m-title">ค้นหาสินค้า</div>' + modeBar('cd') +
       '<div class="kp-disp empty" id="cd-disp">พิมพ์แค่ตัวเลข เช่น 01004</div>' +
-      '<input type="search" class="cd-name" id="cd-name" placeholder="🔤 หรือพิมพ์ชื่อสินค้า เช่น โรเมน / romaine" autocomplete="off">' +
+      '<input type="search" class="cd-name" id="cd-name" placeholder="🔤 พิมพ์ชื่อสินค้า เช่น โรเมน / romaine" autocomplete="off">' +
       '<div class="pre-chips">' +
       prefixes.map((p) => '<button type="button" class="pre-chip" data-cd="P:' + esc(p) + '">' + esc(p) + '</button>').join('') +
       '<button type="button" class="pre-chip" data-cd="C" style="margin-left:auto">ล้าง</button></div>' +
@@ -1463,7 +1683,7 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
       if (nameQ.trim() && !res.list.length) {
         box.innerHTML = '<div class="sugg-hint">ไม่พบสินค้าที่ชื่อใกล้เคียง "' + esc(nameQ) + '" — ลองพิมพ์คำสั้นลง หรือพิมพ์รหัสแทน</div>'
       } else if (!val && !nameQ.trim()) {
-        box.innerHTML = '<div class="sugg-hint">ไม่ต้องพิมพ์ FG / PK — พิมพ์ตัวเลขบางส่วนแล้วแตะรหัสที่ต้องการ</div>'
+        box.innerHTML = searchMode === 'name' ? '<div class="sugg-hint">พิมพ์ชื่อสินค้าบางส่วน เช่น โรเมน / romaine แล้วแตะรายการที่ต้องการ</div>' : '<div class="sugg-hint">ไม่ต้องพิมพ์ FG / PK — พิมพ์ตัวเลขบางส่วนแล้วแตะรหัสที่ต้องการ</div>'
       } else if (!res.list.length) {
         box.innerHTML = '<div class="sugg-hint">ไม่พบรหัสที่มี "' + esc(val) + '" ในฐานสินค้า' +
           (/[A-Z]/.test(val) && /\d/.test(val) && val.length >= 4 ? '<div style="margin-top:8px"><button type="button" class="btn btn-secondary" data-cd="U">ใช้รหัส ' + esc(val) + ' (ไม่มีในฐาน)</button></div>' : '<div style="margin-top:4px">ถ้าเป็นสินค้าใหม่ แตะ ABC แล้วพิมพ์รหัสเต็ม หรือเพิ่มที่แท็บ "ฐานสินค้า"</div>') + '</div>'
@@ -1482,7 +1702,25 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     const pick = (c) => { closeModal(); openQuickQty(c, !scanOv) }
     const nameIn = $('#cd-name', sh)
     nameIn.addEventListener('input', () => { nameQ = nameIn.value; if (nameQ.trim()) val = ''; update() })
+    const applyMode = () => {
+      const nm = searchMode === 'name'
+      sh.querySelectorAll('[data-smode]').forEach((b) => b.classList.toggle('on', b.dataset.smode === searchMode))
+      ;['#cd-disp', '.pre-chips', '#cd-pad'].forEach((q) => { const el = $(q, sh); if (el) el.style.display = nm ? 'none' : '' })
+      nameIn.style.display = nm ? '' : 'none'
+      if (nm) setTimeout(() => { try { nameIn.focus() } catch (x) { /* ไม่เป็นไร */ } }, 30)
+      else { try { nameIn.blur(); sh.focus() } catch (x) { /* ไม่เป็นไร */ } }
+    }
+    const setMode = (m) => {
+      if (m === 'scan') { closeModal(); if (!scanOv) openScanner(); return } // กล้องเปิดอยู่ข้างหลัง → ปิดหน้านี้ก็สแกนต่อได้เลย
+      if (m === searchMode) return
+      searchMode = m
+      if (m === 'name') val = ''
+      else { nameQ = ''; nameIn.value = '' }
+      applyMode(); update()
+    }
     sh.addEventListener('click', (e) => {
+      const smb = e.target.closest('[data-smode]')
+      if (smb) { setMode(smb.dataset.smode); return }
       const t = e.target.closest('[data-cd]')
       if (!t || t.disabled) return
       const v = t.dataset.cd
@@ -1504,6 +1742,7 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
       if (e.ctrlKey || e.metaKey || e.altKey) return
       if (e.key === 'Enter') { e.preventDefault(); if (one()) pick(one()); return }
       if (e.key === 'Escape') { closeModal(); return }
+      if (searchMode === 'name') return
       if (e.target && e.target.tagName === 'INPUT') return
       if (/^[a-zA-Z0-9]$/.test(e.key)) { e.preventDefault(); if (val.length < 20) val += e.key.toUpperCase(); update() }
       else if (e.key === 'Backspace') { e.preventDefault(); val = val.slice(0, -1); update() }
@@ -1512,10 +1751,10 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     sh.addEventListener('paste', (e) => {
       const t = (e.clipboardData && e.clipboardData.getData('text')) || ''
       const c = parseCode(t)
-      if (c) { e.preventDefault(); val = c.slice(0, 20); update() }
+      if (c) { e.preventDefault(); if (searchMode === 'name') { searchMode = 'code'; nameQ = ''; nameIn.value = ''; applyMode() } val = c.slice(0, 20); update() }
     })
+    applyMode()
     update()
-    try { sh.focus() } catch (e) { /* ไม่เป็นไร */ }
   }
 
   /* ---------- สแกน QR ---------- */
@@ -1543,14 +1782,16 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
       '<div class="scan-region" id="scan-region"></div>' +
       '<div class="scan-msg" id="scan-msg">เล็ง QR ที่สินค้า — เจอแล้วจะเปิดหน้ากรอกจำนวนให้อัตโนมัติ</div>' +
       '<div class="scan-recent" id="scan-recent"></div>' +
-      '<div class="scan-foot"><button type="button" class="btn btn-secondary" data-act="scan-code">🔢 กรอกรหัสแทน</button><button type="button" class="btn btn-primary" data-act="scan-close">เสร็จ ปิดกล้อง</button></div></div>'
+      modeBar('scan') +
+      '<div class="scan-foot"><button type="button" class="btn btn-primary" data-act="scan-close">เสร็จ ปิดกล้อง</button></div></div>'
     document.body.appendChild(scanOv)
+    scanOv.addEventListener('click', (e) => { const b = e.target.closest('[data-smode]'); if (b && b.dataset.smode !== 'scan') openCodeModal(b.dataset.smode) })
     renderRecent()
     startScanner()
   }
   async function startScanner() {
     const my = ++scanToken
-    if (typeof Html5Qrcode === 'undefined') { setScanMsg('โหลดตัวสแกนไม่สำเร็จ — ใช้ปุ่ม "กรอกรหัสแทน" ได้เลย', true); return }
+    if (typeof Html5Qrcode === 'undefined') { setScanMsg('โหลดตัวสแกนไม่สำเร็จ — ใช้ปุ่ม "🔢 รหัส" หรือ "🔤 ชื่อ" ได้เลย', true); return }
     try {
       const s = new Html5Qrcode('scan-region')
       scanner = s
@@ -1561,7 +1802,7 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
         if (caps && caps.zoom) await s.applyVideoConstraints({ advanced: [{ zoom: Math.min(caps.zoom.max || 1, Math.max(caps.zoom.min || 1, 2)) }] })
       } catch (e) { /* ไม่รองรับซูม */ }
     } catch (err) {
-      if (my === scanToken && scanOv) setScanMsg('เปิดกล้องไม่ได้ (' + (err && err.message ? err.message : err) + ') — อนุญาตการใช้กล้อง หรือใช้ปุ่ม "กรอกรหัสแทน"', true)
+      if (my === scanToken && scanOv) setScanMsg('เปิดกล้องไม่ได้ (' + (err && err.message ? err.message : err) + ') — อนุญาตการใช้กล้อง หรือใช้ปุ่ม "🔢 รหัส" หรือ "🔤 ชื่อ"', true)
     }
   }
   async function safeStop(s) { try { await s.stop() } catch (e) { /* ไม่เป็นไร */ } try { s.clear() } catch (e) { /* ไม่เป็นไร */ } }
@@ -2469,6 +2710,41 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     const docs = Array.from(new Set(use.map((x) => x.doc)))
     return { day: day, docDate: use[0].date, docs: docs, rows: rows, nRecv: recv.size, bad: rows.filter((r) => r.st === 'bad' || r.st === 'warn').length }
   }
+  /* ---------- ทะเบียนปัญหา: เปิดเคสจากใบโอนที่รับไม่ตรง / GI ไม่ตรงกับตีคืน ---------- */
+  function trIssues() {
+    const since = addDays(todayKey(), -14), out = []
+    const days = Array.from(new Set(SAPM.rows.filter((x) => x.type === 'Transfer' && x.date >= since).map((x) => x.date))).sort()
+    const seen = new Set()
+    days.forEach((d) => {
+      const R = trRecon(d)
+      if (!R || !R.nRecv) return // ยังไม่ได้เริ่มรับของรอบนั้น
+      R.rows.forEach((x) => {
+        if (!(x.st === 'bad' || (x.st === 'warn' && x.only))) return
+        const k = R.docDate + '|' + x.code; if (seen.has(k)) return; seen.add(k)
+        const type = x.only ? 'ไม่มีใบโอน / รับนอกใบโอน' : x.recv < (x.packs || 0) ? 'โอนขาด' : 'โอนเกิน'
+        out.push({ type: type, doc: Array.from(x.docs || []).join(', '), docDate: R.docDate, code: x.code, name: x.name || (products[x.code] || [''])[0], expect: x.packs == null ? '' : x.packs, actual: x.recv, dept: x.recv ? 'คลังสินค้า' : 'ยังไม่ทราบ', detail: 'ตรวจรับ ' + dShort(d) + ': ' + x.txt })
+      })
+    })
+    return out
+  }
+  async function giIssues() {
+    const G = giRecon(await loadRets()), out = []
+    G.rounds.forEach((R) => R.items.forEach((i) => {
+      if (i.st !== 'bad') return
+      out.push({ type: i.got ? 'GI ไม่ตรงกับตีคืน' : 'ยังไม่ทำ GI เกินกำหนด', doc: i.docs.join(', '), docDate: R.sent, code: i.code, name: (products[i.code] || [''])[0], expect: i.need, actual: i.got, dept: 'คลังสินค้า', detail: 'ส่งคืนคลัง ' + dShort(R.sent) + ': ' + i.txt })
+    }))
+    G.extra.forEach((x) => out.push({ type: 'GI ไม่ตรงกับตีคืน', doc: x.doc, docDate: x.date, code: x.code, name: x.name || (products[x.code] || [''])[0], expect: 0, actual: x.left, dept: 'ยังไม่ทราบ', detail: 'มี GI ใน SAP แต่ไม่มีการตีคืนในแอป' }))
+    return out
+  }
+  async function openIssues() {
+    if (!SYNC_URL) { toast('ยังไม่ได้ตั้งค่า SYNC_URL', 'err'); return }
+    if (!SAPM.rows.length) await sapmFetch(true)
+    const src = []
+    if (CFG.MODE === 'receive') src.push({ label: 'ใบโอนที่รับไม่ตรง (14 วันล่าสุด)', hint: 'โอนขาด / โอนเกิน / รับนอกใบโอน — จากใบตรวจรับของโอนย้าย', get: async () => trIssues() })
+    src.push({ label: 'GI ไม่ตรงกับการตีคืน', hint: 'ส่งคืนคลังแล้วแต่ไม่มี GI / GI ไม่ครบ เกิน ' + GI_WAIT + ' วัน · GI ที่ไม่มีในแอป', get: giIssues })
+    window.IssueKit.init({ call: (a, b) => sapApi(a, Object.assign({ user: SESSION ? SESSION.user : '' }, b || {})), user: () => (SESSION ? SESSION.user : ''), branch: () => SESSION_BRANCH().name, toast: toast, sources: src })
+    window.IssueKit.open()
+  }
   function printTransfer(day0) {
     const days = Array.from(new Set(SAPM.rows.filter((x) => x.type === 'Transfer').map((x) => x.date))).sort().reverse()
     const opts = []
@@ -2656,6 +2932,7 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
       (CFG.MODE === 'receive' ? '<button type="button" class="btn btn-primary btn-block" data-act="sap-tr">🚚 ① ตรวจรับของโอนย้าย (Transfer)</button>' : '') +
       '<button type="button" class="btn btn-secondary btn-block" data-act="sap-gi">↩️ ② กระทบ GI กับการตีคืน</button>' +
       '<button type="button" class="btn btn-secondary btn-block" data-act="sap-ty">📊 ③ สรุปแยกประเภท (DO / Transfer / GR / GI / CN)</button>' +
+      '<button type="button" class="btn btn-secondary btn-block" data-act="issues">📌 ทะเบียนปัญหา (เปิดเคส · แผนกที่รับผิดชอบ · ติดตามสถานะ)</button>' +
       '<button type="button" class="btn btn-ghost btn-block" data-act="sap-reload">🔄 โหลดข้อมูลล่าสุดจากชีต</button></div></div>' +
       '<div class="card"><h3>📋 วางข้อมูลจาก SAP</h3><p style="margin:0 0 10px;color:var(--muted);font-size:14px">ไฟล์ Excel จาก SAP (คอลัมน์ รหัสสินค้า · ชื่อสินค้า · วันที่เอกสาร · ประเภทเอกสาร · เลขที่เอกสาร · จำนวนรับเข้า · จำนวนตัดออก · Inventory UoM) — วางช่วงวันที่ซ้ำได้ ระบบแทนที่ข้อมูลเดิมให้ ไม่ซ้ำ</p>' +
       '<input id="sap-file" type="file" accept=".xlsx,.csv,.txt,.tsv" style="width:100%;margin-bottom:10px">' +
@@ -2724,6 +3001,7 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
     else if (act === 'sap-reload') { await sapmFetch(false); toast('โหลดข้อมูล SAP ล่าสุดแล้ว') }
     else if (act === 'sap-tr') printTransfer()
     else if (act === 'sap-gi') printGi()
+    else if (act === 'issues') openIssues()
     else if (act === 'sap-ty') printSapTypes()
     else if (act === 'p-read') readPasted()
     else if (act === 'p-save') saveDraft()
@@ -2843,6 +3121,196 @@ var __Html5QrcodeLibrary__;(()=>{var t={449:function(t,e,r){!function(t){"use st
 })()
 </script>
 
+
+<style>
+/* ---------- ทะเบียนปัญหา (IssueKit) ---------- */
+#ik-ov { position: fixed; inset: 0; z-index: 9500; background: #eef3ef; display: flex; flex-direction: column; font-family: Sarabun, sans-serif; color: #17261c; }
+#ik-ov .ik-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 10px 12px; padding-top: max(10px, env(safe-area-inset-top)); background: #14432b; color: #fff; }
+#ik-ov .ik-bar b { flex: 1 1 auto; font-size: 17px; }
+#ik-ov button { font: 700 15px Sarabun, sans-serif; border: 0; border-radius: 10px; padding: 9px 14px; cursor: pointer; min-height: 0; }
+#ik-ov .ik-bar button { background: rgba(255,255,255,.15); color: #fff; }
+#ik-ov .ik-bar .ik-add { background: #f5c542; color: #3b2c00; }
+#ik-ov .ik-body { flex: 1; overflow: auto; padding: 12px; -webkit-overflow-scrolling: touch; }
+#ik-ov .ik-wrap { max-width: 760px; margin: 0 auto; }
+#ik-ov .ik-tabs { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+#ik-ov .ik-tabs button { background: #fff; color: #3d5a45; border: 1.5px solid #cfe0d4; }
+#ik-ov .ik-tabs button.on { background: #1a7a3c; color: #fff; border-color: #1a7a3c; }
+#ik-ov .ik-card { background: #fff; border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,.08); border-left: 5px solid #c0392b; }
+#ik-ov .ik-card.s2 { border-left-color: #e0a100; } #ik-ov .ik-card.s3 { border-left-color: #2e86c1; } #ik-ov .ik-card.s4 { border-left-color: #1a7a3c; opacity: .85; }
+#ik-ov .ik-h { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+#ik-ov .ik-h b { font-size: 16px; }
+#ik-ov .ik-tag { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: #e8f5ee; color: #145f2f; margin-right: 4px; }
+#ik-ov .ik-tag.st1 { background: #fdecea; color: #b3261e; } #ik-ov .ik-tag.st2 { background: #fff4d6; color: #7a5a00; } #ik-ov .ik-tag.st3 { background: #e3f0fb; color: #1f5f8b; }
+#ik-ov .ik-sub { color: #4b6b55; font-size: 14px; margin: 4px 0; }
+#ik-ov .ik-nums { display: flex; gap: 14px; font-size: 14px; margin: 4px 0; flex-wrap: wrap; }
+#ik-ov .ik-nums b { font-size: 16px; }
+#ik-ov .ik-hist { font-size: 12.5px; color: #555; white-space: pre-wrap; background: #f6f8f6; border-radius: 8px; padding: 6px 8px; margin-top: 6px; max-height: 120px; overflow: auto; }
+#ik-ov .ik-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+#ik-ov select, #ik-ov input, #ik-ov textarea { width: 100%; font: 15px Sarabun, sans-serif; padding: 8px 10px; border: 1.5px solid #cfe0d4; border-radius: 10px; background: #fff; color: #17261c; box-sizing: border-box; }
+#ik-ov label { display: block; font-size: 12.5px; color: #4b6b55; font-weight: 700; }
+#ik-ov .ik-save { background: #1a7a3c; color: #fff; margin-top: 8px; width: 100%; }
+#ik-ov .ik-empty { text-align: center; color: #4b6b55; padding: 30px 10px; }
+#ik-ov .ik-pick { display: flex; gap: 10px; align-items: flex-start; background: #fff; border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; }
+#ik-ov .ik-pick input { width: 22px; height: 22px; flex: none; margin-top: 2px; }
+#ik-ov .ik-foot { display: flex; gap: 8px; padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px)); background: #fff; border-top: 1px solid #d6e4da; }
+#ik-ov .ik-foot button { flex: 1; }
+#ik-ov .ik-foot .ik-go { background: #1a7a3c; color: #fff; } #ik-ov .ik-foot .ik-ghost { background: #eef3ef; color: #14432b; }
+#ik-ov .ik-src { display: block; width: 100%; text-align: left; background: #fff; color: #14432b; border: 1.5px solid #cfe0d4; margin-bottom: 8px; padding: 12px 14px; }
+#ik-ov .ik-src small { display: block; font-weight: 400; color: #4b6b55; }
+</style>
+<script>
+/* IssueKit — ทะเบียนปัญหา: เปิดเคสเมื่อของไม่ตรง (โอนผิด / GI ไม่ตรง / ปรับสต๊อกผิด) ระบุแผนกที่รับผิดชอบ และติดตามสถานะจนปิด
+   ทุกการเปลี่ยนแปลงบันทึกในช่อง "ประวัติ" (ใคร · เมื่อไร · เปลี่ยนอะไร) — ไม่มีการแก้ทับเงียบ ๆ */
+window.IssueKit = (function () {
+  var TYPES = ['โอนขาด', 'โอนเกิน', 'โอนผิดรหัส', 'ไม่มีใบโอน / รับนอกใบโอน', 'GI ไม่ตรงกับตีคืน', 'ยังไม่ทำ GI เกินกำหนด', 'ปรับสต๊อกผิด', 'ยังไม่ปรับสต๊อก', 'สินค้าเสีย / ไม่ได้คุณภาพ', 'อื่น ๆ']
+  var DEPTS = ['คลังสินค้า', 'สาขา', 'จัดซื้อ', 'บัญชี', 'ขนส่ง', 'ซัพพลายเออร์', 'ยังไม่ทราบ']
+  var STATUS = ['เปิด', 'แจ้งแผนกแล้ว', 'แผนกแก้แล้ว รอตรวจ', 'ปิดเคส']
+  var cfg = null, ov = null, list = [], tab = 'open'
+  var esc = function (v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] }) }
+  var num = function (v) { return v === '' || v == null || isNaN(Number(v)) ? '' : String(Math.round(Number(v) * 1000) / 1000) }
+  var dTH = function (k) { var p = String(k || '').slice(0, 10).split('-'); return p.length === 3 ? Number(p[2]) + '/' + Number(p[1]) + '/' + p[0] : String(k || '') }
+  var stIx = function (s) { var i = STATUS.indexOf(s); return i < 0 ? 0 : i }
+  function msg(t, err) { if (cfg && cfg.toast) cfg.toast(t, err ? 'err' : 'ok', err ? 4000 : 2500); else alert(t) }
+  function init(c) { cfg = c }
+  function shell(title, body, foot) {
+    close()
+    ov = document.createElement('div')
+    ov.id = 'ik-ov'
+    ov.innerHTML = '<div class="ik-bar"><b>' + title + '</b>' + (foot ? '' : '<button type="button" class="ik-add" data-ik="add">➕ เปิดเคส</button><button type="button" data-ik="print">🖨️ / 📗</button>') + '<button type="button" data-ik="close">ปิด</button></div>' +
+      '<div class="ik-body"><div class="ik-wrap">' + body + '</div></div>' + (foot || '')
+    document.body.appendChild(ov)
+    ov.addEventListener('click', onClick)
+    return ov
+  }
+  function close() { if (ov) { ov.remove(); ov = null } }
+  async function load() {
+    var d = await cfg.call('issueList', {})
+    list = (d && d.items) || []
+  }
+  async function open() {
+    if (!cfg) return
+    shell('📌 ทะเบียนปัญหา', '<div class="ik-empty">กำลังโหลด…</div>')
+    try { await load() } catch (e) { ov.querySelector('.ik-wrap').innerHTML = '<div class="ik-empty">โหลดไม่สำเร็จ: ' + esc(e.message) + '</div>'; return }
+    draw()
+  }
+  function draw() {
+    if (!ov) return
+    var open = list.filter(function (x) { return x.status !== 'ปิดเคส' })
+    var show = tab === 'open' ? open : tab === 'closed' ? list.filter(function (x) { return x.status === 'ปิดเคส' }) : list
+    show = show.slice().sort(function (a, b) { return stIx(a.status) - stIx(b.status) || String(b.openedAt).localeCompare(String(a.openedAt)) })
+    var byDept = {}
+    open.forEach(function (x) { byDept[x.dept || 'ยังไม่ทราบ'] = (byDept[x.dept || 'ยังไม่ทราบ'] || 0) + 1 })
+    var h = '<div class="ik-tabs"><button type="button" data-ik="tab:open" class="' + (tab === 'open' ? 'on' : '') + '">ยังไม่ปิด (' + open.length + ')</button><button type="button" data-ik="tab:closed" class="' + (tab === 'closed' ? 'on' : '') + '">ปิดแล้ว</button><button type="button" data-ik="tab:all" class="' + (tab === 'all' ? 'on' : '') + '">ทั้งหมด</button></div>'
+    if (open.length) h += '<div class="ik-sub">เคสค้างตามแผนก: ' + Object.keys(byDept).map(function (k) { return '<span class="ik-tag">' + esc(k) + ' ' + byDept[k] + '</span>' }).join('') + '</div>'
+    if (cfg.sources && cfg.sources.length) h += '<button type="button" class="ik-src" data-ik="src">🔎 ดึงรายการที่ไม่ตรงจากผลตรวจ มาเปิดเคส<small>' + cfg.sources.map(function (s) { return esc(s.label) }).join(' · ') + '</small></button>'
+    if (!show.length) h += '<div class="ik-empty">' + (tab === 'open' ? 'ไม่มีเคสค้าง 👍' : 'ไม่มีเคส') + '</div>'
+    show.forEach(function (x) {
+      var s = stIx(x.status) + 1, diff = x.expect !== '' && x.actual !== '' ? Math.round((Number(x.actual) - Number(x.expect)) * 1000) / 1000 : ''
+      h += '<div class="ik-card s' + s + '" data-id="' + esc(x.id) + '"><div class="ik-h"><b>' + esc(x.code) + ' ' + esc(x.name) + '</b><span><span class="ik-tag st' + s + '">' + esc(x.status) + '</span><span class="ik-tag">' + esc(x.id) + '</span></span></div>' +
+        '<div class="ik-sub"><span class="ik-tag">' + esc(x.type) + '</span>' + (x.doc ? 'เอกสาร ' + esc(x.doc) + ' ' : '') + (x.docDate ? '· ลงวันที่ ' + dTH(x.docDate) + ' ' : '') + '· เปิดเมื่อ ' + esc(x.openedAt) + ' โดย ' + esc(x.openedBy) + '</div>' +
+        (x.expect !== '' || x.actual !== '' ? '<div class="ik-nums"><span>ควรเป็น <b>' + num(x.expect) + '</b></span><span>จริง <b>' + num(x.actual) + '</b></span>' + (diff !== '' ? '<span>ต่าง <b style="color:' + (diff ? '#b3261e' : '#1a7a3c') + '">' + (diff > 0 ? '+' : '') + num(diff) + '</b></span>' : '') + '</div>' : '') +
+        (x.detail ? '<div class="ik-sub">📝 ' + esc(x.detail) + '</div>' : '') +
+        '<div class="ik-row"><div><label>แผนกที่รับผิดชอบ</label><select data-f="dept">' + DEPTS.map(function (d) { return '<option' + (d === (x.dept || 'ยังไม่ทราบ') ? ' selected' : '') + '>' + esc(d) + '</option>' }).join('') + '</select></div>' +
+        '<div><label>สถานะ</label><select data-f="status">' + STATUS.map(function (d) { return '<option' + (d === x.status ? ' selected' : '') + '>' + esc(d) + '</option>' }).join('') + '</select></div></div>' +
+        '<div style="margin-top:8px"><label>บันทึกเพิ่ม (เช่น แจ้งใคร · เลขที่เอกสารแก้ไข)</label><input data-f="note" placeholder="จะต่อท้ายในประวัติ ไม่ลบของเดิม"></div>' +
+        '<button type="button" class="ik-save" data-ik="save">💾 บันทึก</button>' +
+        (x.history ? '<div class="ik-hist">' + esc(x.history) + '</div>' : '') + '</div>'
+    })
+    ov.querySelector('.ik-wrap').innerHTML = h
+  }
+  async function save(card) {
+    var id = card.getAttribute('data-id'), x = list.find(function (i) { return i.id === id })
+    var dept = card.querySelector('[data-f=dept]').value, status = card.querySelector('[data-f=status]').value, note = card.querySelector('[data-f=note]').value.trim()
+    if (x && dept === (x.dept || 'ยังไม่ทราบ') && status === x.status && !note) { msg('ยังไม่มีอะไรเปลี่ยน'); return }
+    try {
+      var d = await cfg.call('issueSave', { items: [{ id: id, dept: dept, status: status, note: note }] })
+      ;(d.items || []).forEach(function (n) { var i = list.findIndex(function (y) { return y.id === n.id }); if (i >= 0) list[i] = n })
+      msg('บันทึกแล้ว'); draw()
+    } catch (e) { msg('บันทึกไม่สำเร็จ: ' + e.message, true) }
+  }
+  function addForm(pre) {
+    pre = pre || {}
+    var f = function (k, lab, ph, type) { return '<div><label>' + lab + '</label><input data-n="' + k + '" ' + (type ? 'type="' + type + '" inputmode="decimal" ' : '') + 'value="' + esc(pre[k] == null ? '' : pre[k]) + '" placeholder="' + esc(ph || '') + '"></div>' }
+    var sel = function (k, lab, arr, v) { return '<div><label>' + lab + '</label><select data-n="' + k + '">' + arr.map(function (d) { return '<option' + (d === v ? ' selected' : '') + '>' + esc(d) + '</option>' }).join('') + '</select></div>' }
+    var body = '<div class="ik-card s1"><div class="ik-row">' + sel('type', 'ประเภทปัญหา', TYPES, pre.type || TYPES[0]) + sel('dept', 'แผนกที่รับผิดชอบ', DEPTS, pre.dept || 'คลังสินค้า') + '</div>' +
+      '<div class="ik-row">' + f('code', 'รหัสสินค้า', 'FG01002') + f('name', 'ชื่อสินค้า', '') + '</div>' +
+      '<div class="ik-row">' + f('doc', 'เลขที่เอกสาร SAP', 'เช่น TR / GI / IA') + f('docDate', 'วันที่เอกสาร', '', 'date') + '</div>' +
+      '<div class="ik-row">' + f('expect', 'ควรเป็น (แพค)', '', 'number') + f('actual', 'ได้จริง (แพค)', '', 'number') + '</div>' +
+      '<div style="margin-top:8px"><label>รายละเอียด</label><textarea data-n="detail" rows="3" placeholder="เกิดอะไรขึ้น · หลักฐาน">' + esc(pre.detail || '') + '</textarea></div></div>'
+    shell('➕ เปิดเคสใหม่', body, '<div class="ik-foot"><button type="button" class="ik-ghost" data-ik="back">ย้อนกลับ</button><button type="button" class="ik-go" data-ik="create">💾 เปิดเคส</button></div>')
+    var dd = ov.querySelector('[data-n=docDate]'); if (dd) dd.removeAttribute('inputmode')
+  }
+  async function createFromForm() {
+    var it = {}
+    ov.querySelectorAll('[data-n]').forEach(function (el) { it[el.getAttribute('data-n')] = el.value.trim() })
+    if (!it.code && !it.detail) { msg('ใส่รหัสสินค้า หรือรายละเอียด อย่างน้อย 1 อย่าง', true); return }
+    it.code = it.code.toUpperCase()
+    await createMany([it])
+  }
+  async function createMany(items) {
+    try {
+      var d = await cfg.call('issueSave', { items: items })
+      msg('เปิดเคสแล้ว ' + (d.created || 0) + ' เคส' + (d.skipped ? ' · ซ้ำกับเคสที่ยังเปิดอยู่ ' + d.skipped : ''))
+      tab = 'open'; await open()
+    } catch (e) { msg('เปิดเคสไม่สำเร็จ: ' + e.message, true) }
+  }
+  // เลือกรายการที่ไม่ตรง (จากผลตรวจ) มาเปิดเคส
+  var picks = []
+  function pick(title, items) {
+    picks = items || []
+    var body = picks.length ? '<div class="ik-sub">ติ๊กรายการที่จะเปิดเคส · รายการที่มีเคสเปิดอยู่แล้วจะไม่ซ้ำ</div>' + picks.map(function (x, i) {
+      return '<label class="ik-pick"><input type="checkbox" data-p="' + i + '" checked><span><b>' + esc(x.code) + ' ' + esc(x.name || '') + '</b><br><span class="ik-tag">' + esc(x.type) + '</span>' + (x.doc ? 'เอกสาร ' + esc(x.doc) + ' ' : '') + (x.docDate ? '· ' + dTH(x.docDate) : '') +
+        (x.expect !== undefined ? '<br>ควรเป็น <b>' + num(x.expect) + '</b> · จริง <b>' + num(x.actual) + '</b>' : '') + (x.detail ? '<br><small>' + esc(x.detail) + '</small>' : '') + '</span></label>'
+    }).join('') : '<div class="ik-empty">ไม่พบรายการที่ไม่ตรง 👍</div>'
+    shell('🔎 ' + esc(title), body, '<div class="ik-foot"><button type="button" class="ik-ghost" data-ik="back">ย้อนกลับ</button>' + (picks.length ? '<button type="button" class="ik-go" data-ik="createPicked">📌 เปิดเคสที่เลือก</button>' : '') + '</div>')
+  }
+  function chooseSource() {
+    var body = cfg.sources.map(function (s, i) { return '<button type="button" class="ik-src" data-ik="srcgo:' + i + '">' + esc(s.label) + (s.hint ? '<small>' + esc(s.hint) + '</small>' : '') + '</button>' }).join('')
+    shell('🔎 ดึงจากผลตรวจ', body, '<div class="ik-foot"><button type="button" class="ik-ghost" data-ik="back">ย้อนกลับ</button></div>')
+  }
+  function printList() {
+    if (!window.PrintKit) return
+    var rowsOf = function (mode) { return list.filter(function (x) { return mode === 'all' || x.status !== 'ปิดเคส' }).sort(function (a, b) { return String(a.openedAt).localeCompare(String(b.openedAt)) }) }
+    window.PrintKit.open({
+      name: 'ทะเบียนปัญหา', options: [['open', 'เฉพาะเคสที่ยังไม่ปิด'], ['all', 'ทุกเคส']],
+      build: function (mode) {
+        var L = rowsOf(mode)
+        return {
+          kicker: 'ISSUE LOG', title: 'ทะเบียนปัญหา / เคสผิดพลาดระหว่างแผนก', sub: (cfg.branch ? 'สาขา' + cfg.branch() + ' · ' : '') + (mode === 'all' ? 'ทุกเคส' : 'เฉพาะเคสที่ยังไม่ปิด'),
+          meta: [['สาขา', cfg.branch ? cfg.branch() : ''], ['จำนวนเคส', L.length + ' เคส'], ['ผู้พิมพ์', cfg.user ? cfg.user() : '']],
+          cols: [{ h: 'เลขที่เคส', cls: 'code', w: '10%' }, { h: 'เปิดเมื่อ', w: '10%' }, { h: 'ประเภท', w: '11%' }, { h: 'เอกสาร', w: '10%' }, { h: 'สินค้า' }, { h: 'ควรเป็น', cls: 'n', w: '6%' }, { h: 'จริง', cls: 'n', w: '6%' }, { h: 'แผนก', w: '9%' }, { h: 'สถานะ', w: '10%' }],
+          rows: L.map(function (x) { return { hl: x.status === 'เปิด', cells: [x.id, x.openedAt, x.type, (x.doc || '') + (x.docDate ? ' ' + dTH(x.docDate) : ''), x.code + ' ' + x.name + (x.detail ? ' — ' + x.detail : ''), num(x.expect), num(x.actual), x.dept, x.status] } }),
+          noteBox: 'หมายเหตุ:', sign: ['ผู้จัดทำ (สาขา)', 'ผู้รับทราบ (แผนกที่รับผิดชอบ)', 'ผู้จัดการสาขา'], footRight: 'ทะเบียนปัญหา', empty: 'ไม่มีเคส'
+        }
+      }
+    })
+  }
+  async function onClick(e) {
+    var t = e.target.closest('[data-ik]'); if (!t) return
+    var a = t.getAttribute('data-ik')
+    if (a === 'close') close()
+    else if (a === 'back') open()
+    else if (a === 'add') addForm()
+    else if (a === 'create') createFromForm()
+    else if (a === 'print') { close(); printList() }
+    else if (a.indexOf('tab:') === 0) { tab = a.slice(4); draw() }
+    else if (a === 'save') save(t.closest('.ik-card'))
+    else if (a === 'src') chooseSource()
+    else if (a.indexOf('srcgo:') === 0) {
+      var s = cfg.sources[Number(a.slice(6))]
+      t.disabled = true; t.textContent = 'กำลังตรวจ…'
+      try { pick(s.label, await s.get()) } catch (err) { msg('ตรวจไม่สำเร็จ: ' + err.message, true); chooseSource() }
+    } else if (a === 'createPicked') {
+      var sel = []
+      ov.querySelectorAll('[data-p]').forEach(function (c) { if (c.checked) sel.push(picks[Number(c.getAttribute('data-p'))]) })
+      if (!sel.length) { msg('ยังไม่ได้เลือกรายการ', true); return }
+      t.disabled = true
+      await createMany(sel)
+    }
+  }
+  return { init: init, open: open, pick: pick, close: close, TYPES: TYPES, DEPTS: DEPTS }
+})()
+</script>
 
 </body>
 </html>
